@@ -156,6 +156,7 @@
                         <th>Hora</th>
                         <th>Servicio ingreso</th>
                         <th>Servicio actual</th>
+                        <th>Cama</th>
                         <th>Gravedad</th>
                         <th>Financiamiento</th>
                         <th>Médico ingreso</th>
@@ -192,6 +193,17 @@
                             <span class="badge-servicio">
                                 {{ $p->SERVICIOACTUAL ?? 'SIN SERVICIO' }}
                             </span>
+                        </td>
+                        <td class="text-center">
+                            @if($p->CAMAACTUAL)
+                            
+                                {{ $p->CAMAACTUAL }}
+                           
+                            @else
+                            
+                                SIN CAMA
+                           
+                            @endif
                         </td>
 
                         <td>

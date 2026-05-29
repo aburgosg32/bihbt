@@ -127,6 +127,7 @@ class EmergenciaController extends Controller
                 'HoraIngreso',
                 'SERVICIOINGRESO',
                 'SERVICIOACTUAL',
+                'CAMAACTUAL',
                 'TIPOGRAVEDAD',
                 'FUENTEFINANCIAMIENTO',
                 'MEDICOINGRESO',
@@ -146,6 +147,7 @@ class EmergenciaController extends Controller
                         ->orWhere('SERVICIOINGRESO', 'like', "%{$buscar}%")
                         ->orWhere('SERVICIOACTUAL', 'like', "%{$buscar}%")
                         ->orWhere('TIPOGRAVEDAD', 'like', "%{$buscar}%")
+                        ->orWhere('CAMAACTUAL', 'like', "%{$buscar}%")
                        /* ->orWhere('CIE10', 'like', "%{$buscar}%")
                         ->orWhere('DIAGNOSTICOS', 'like', "%{$buscar}%")*/
                         ->orWhere('FUENTEFINANCIAMIENTO', 'like', "%{$buscar}%")

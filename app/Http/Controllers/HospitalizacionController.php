@@ -163,6 +163,7 @@ class HospitalizacionController extends Controller
                 'HoraIngreso',
                 'SERVICIOINGRESO',
                 'SERVICIOACTUAL',
+                'CAMAACTUAL',
                 'TIPOGRAVEDAD',
                 'FUENTEFINANCIAMIENTO',
                 'MEDICOINGRESO',
@@ -182,6 +183,7 @@ class HospitalizacionController extends Controller
                         ->orWhere('PACIENTE', 'like', "%{$buscar}%")
                         ->orWhere('SERVICIOINGRESO', 'like', "%{$buscar}%")
                         ->orWhere('SERVICIOACTUAL', 'like', "%{$buscar}%")
+                        ->orWhere('CAMAACTUAL', 'like', "%{$buscar}%")
                         ->orWhere('TIPOGRAVEDAD', 'like', "%{$buscar}%")
                         ->orWhere('FUENTEFINANCIAMIENTO', 'like', "%{$buscar}%")
                         ->orWhere('MEDICOINGRESO', 'like', "%{$buscar}%");
