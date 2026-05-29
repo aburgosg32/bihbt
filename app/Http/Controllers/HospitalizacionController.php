@@ -1,0 +1,225 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class HospitalizacionController extends Controller
+{
+    /*
+    |--------------------------------------------------------------------------
+    | DASHBOARD HOSPITALIZACION
+    |--------------------------------------------------------------------------
+    */
+
+    public function dashboard(Request $request)
+    {
+        $fechaInicio = $request->fecha_inicio ?? now()->format('Y-m-d');
+        $fechaFin = $request->fecha_fin ?? now()->format('Y-m-d');
+
+        /*
+        |--------------------------------------------------------------------------
+        | QUERY BASE
+        |--------------------------------------------------------------------------
+        */
+
+        $queryBase = DB::connection('sigh')
+            ->table('dashboard.vw_hospitalizacion_operativa')
+            ->whereRaw("FechaIngreso >= CONVERT(date, ?, 120)", [$fechaInicio])
+            ->whereRaw("FechaIngreso < DATEADD(day, 1, CONVERT(date, ?, 120))", [$fechaFin]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | KPI
+        |--------------------------------------------------------------------------
+        */
+
+        $totalAtenciones = (clone $queryBase)->count();
+
+        $pacientesActivos = (clone $queryBase)
+            ->whereNull('FechaEgreso')
+            ->whereNull('FechaEgresoAdministrativo')
+            ->count();
+
+        $pacientesEgresados = (clone $queryBase)
+            ->where(function ($query) {
+                $query->whereNotNull('FechaEgreso')
+                    ->orWhereNotNull('FechaEgresoAdministrativo');
+            })
+            ->count();
+
+        $sinCierreAdministrativo = (clone $queryBase)
+            ->whereNull('FechaEgresoAdministrativo')
+            ->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | SERVICIOS ACTIVOS
+        |--------------------------------------------------------------------------
+        */
+
+        $serviciosActivosSql = DB::connection('sigh')->select("
+            SELECT COUNT(DISTINCT SERVICIOACTUAL) AS total
+            FROM dashboard.vw_hospitalizacion_operativa
+            WHERE FechaIngreso >= CONVERT(date, ?, 120)
+              AND FechaIngreso < DATEADD(day, 1, CONVERT(date, ?, 120))
+              AND FechaEgreso IS NULL
+              AND FechaEgresoAdministrativo IS NULL
+              AND SERVICIOACTUAL IS NOT NULL
+        ", [$fechaInicio, $fechaFin]);
+
+        $serviciosActivos = $serviciosActivosSql[0]->total ?? 0;
+
+        /*
+        |--------------------------------------------------------------------------
+        | GRAFICOS
+        |--------------------------------------------------------------------------
+        */
+
+        $gravedad = (clone $queryBase)
+            ->select('TIPOGRAVEDAD', DB::raw('COUNT(*) as total'))
+            ->groupBy('TIPOGRAVEDAD')
+            ->orderByDesc('total')
+            ->get();
+
+        $servicios = (clone $queryBase)
+            ->whereNull('FechaEgreso')
+            ->whereNull('FechaEgresoAdministrativo')
+            ->whereNotNull('SERVICIOACTUAL')
+            ->select('SERVICIOACTUAL', DB::raw('COUNT(*) as total'))
+            ->groupBy('SERVICIOACTUAL')
+            ->orderByDesc('total')
+            ->get();
+
+        $flujoHorario = (clone $queryBase)
+            ->selectRaw('DATEPART(HOUR, HoraIngreso) as hora, COUNT(*) as total')
+            ->whereNotNull('HoraIngreso')
+            ->groupByRaw('DATEPART(HOUR, HoraIngreso)')
+            ->orderBy('hora')
+            ->get();
+
+        $financiamiento = (clone $queryBase)
+            ->select('FUENTEFINANCIAMIENTO', DB::raw('COUNT(*) as total'))
+            ->groupBy('FUENTEFINANCIAMIENTO')
+            ->orderByDesc('total')
+            ->get();
+
+        return view('hospitalizacion.dashboard', compact(
+            'fechaInicio',
+            'fechaFin',
+            'totalAtenciones',
+            'pacientesActivos',
+            'pacientesEgresados',
+            'sinCierreAdministrativo',
+            'serviciosActivos',
+            'gravedad',
+            'servicios',
+            'flujoHorario',
+            'financiamiento'
+        ));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PACIENTES ACTIVOS
+    |--------------------------------------------------------------------------
+    */
+
+    public function pacientesActivos(Request $request)
+    {
+        $anio = $request->input('anio', 2026);
+        $servicio = $request->input('servicio');
+        $buscar = trim($request->input('buscar', ''));
+
+        $anios = collect([2026]);
+
+        $serviciosSql = DB::connection('sigh')->select("
+        SELECT DISTINCT 
+            UPPER(SER.Nombre) AS SERVICIOACTUAL
+        FROM Atenciones AS A
+        LEFT JOIN Servicios AS SER
+            ON A.IdServicioEgreso = SER.IdServicio
+        WHERE A.IdTipoServicio = 3
+          AND A.FechaIngreso >= CONVERT(date, '20260101', 112)
+          AND A.FechaEgreso IS NULL
+          AND A.FechaEgresoAdministrativo IS NULL
+          AND SER.Nombre IS NOT NULL
+        ORDER BY SERVICIOACTUAL
+    ");
+
+        $servicios = collect($serviciosSql)->pluck('SERVICIOACTUAL');
+
+        $pacientes = DB::connection('sigh')
+            ->table('dashboard.vw_hospitalizacion_operativa')
+            ->select([
+                'IdAtencion',
+                'CUENTA',
+                'PACIENTE',
+                'Edad',
+                'TIPOEDAD',
+                'SEXO',
+                'FechaIngreso',
+                'HoraIngreso',
+                'SERVICIOINGRESO',
+                'SERVICIOACTUAL',
+                'TIPOGRAVEDAD',
+                'FUENTEFINANCIAMIENTO',
+                'MEDICOINGRESO',
+            ])
+            ->whereNull('FechaEgreso')
+            ->whereNull('FechaEgresoAdministrativo')
+            ->whereRaw("YEAR(FechaIngreso) = ?", [$anio])
+
+            ->when($servicio, function ($query) use ($servicio) {
+                $query->where('SERVICIOACTUAL', $servicio);
+            })
+
+            ->when($buscar !== '', function ($query) use ($buscar) {
+                $query->where(function ($q) use ($buscar) {
+                    $q->whereRaw("CAST(CUENTA AS VARCHAR(30)) LIKE ?", ["%{$buscar}%"])
+                        ->orWhereRaw("CAST(IdAtencion AS VARCHAR(30)) LIKE ?", ["%{$buscar}%"])
+                        ->orWhere('PACIENTE', 'like', "%{$buscar}%")
+                        ->orWhere('SERVICIOINGRESO', 'like', "%{$buscar}%")
+                        ->orWhere('SERVICIOACTUAL', 'like', "%{$buscar}%")
+                        ->orWhere('TIPOGRAVEDAD', 'like', "%{$buscar}%")
+                        ->orWhere('FUENTEFINANCIAMIENTO', 'like', "%{$buscar}%")
+                        ->orWhere('MEDICOINGRESO', 'like', "%{$buscar}%");
+                });
+            })
+
+            ->orderBy('SERVICIOACTUAL')
+            ->orderByDesc('FechaIngreso')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('hospitalizacion.pacientes_activos', compact(
+            'pacientes',
+            'anios',
+            'servicios',
+            'anio',
+            'servicio',
+            'buscar'
+        ));
+    }
+
+    public function diagnosticos($idAtencion)
+    {
+        $diagnosticos = DB::connection('sigh')->select("
+        SELECT 
+            D.CodigoCIE10 AS cie10,
+            UPPER(D.Descripcion) AS descripcion
+        FROM AtencionesDiagnosticos AD
+        INNER JOIN Diagnosticos D
+            ON D.IdDiagnostico = AD.IdDiagnostico
+        WHERE AD.IdAtencion = ?
+        ORDER BY D.CodigoCIE10
+    ", [$idAtencion]);
+
+        return response()->json([
+            'ok' => true,
+            'idAtencion' => $idAtencion,
+            'diagnosticos' => $diagnosticos
+        ]);
+    }
+}
