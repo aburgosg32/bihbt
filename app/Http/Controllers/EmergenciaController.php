@@ -148,7 +148,7 @@ class EmergenciaController extends Controller
                         ->orWhere('SERVICIOACTUAL', 'like', "%{$buscar}%")
                         ->orWhere('TIPOGRAVEDAD', 'like', "%{$buscar}%")
                         ->orWhere('CAMAACTUAL', 'like', "%{$buscar}%")
-                       /* ->orWhere('CIE10', 'like', "%{$buscar}%")
+                        /* ->orWhere('CIE10', 'like', "%{$buscar}%")
                         ->orWhere('DIAGNOSTICOS', 'like', "%{$buscar}%")*/
                         ->orWhere('FUENTEFINANCIAMIENTO', 'like', "%{$buscar}%")
                         ->orWhere('MEDICOINGRESO', 'like', "%{$buscar}%");
@@ -187,5 +187,84 @@ class EmergenciaController extends Controller
             'idAtencion' => $idAtencion,
             'diagnosticos' => $diagnosticos
         ]);
+    }
+    public function camasServicio(Request $request)
+    {
+        $servicio = $request->input('servicio');
+        $estado = $request->input('estado');
+        $buscar = trim($request->input('buscar', ''));
+
+        $servicios = DB::connection('sigh')
+            ->table('dashboard.vw_emergencia_camas_servicio')
+            ->whereNotNull('SERVICIO')
+            ->select('SERVICIO')
+            ->distinct()
+            ->orderBy('SERVICIO')
+            ->pluck('SERVICIO');
+
+        $estados = DB::connection('sigh')
+            ->table('dashboard.vw_emergencia_camas_servicio')
+            ->whereNotNull('ESTADO_OPERATIVO')
+            ->select('ESTADO_OPERATIVO')
+            ->distinct()
+            ->orderBy('ESTADO_OPERATIVO')
+            ->pluck('ESTADO_OPERATIVO');
+
+        $camas = DB::connection('sigh')
+            ->table('dashboard.vw_emergencia_camas_servicio')
+            ->when($servicio, function ($query) use ($servicio) {
+                $query->where('SERVICIO', $servicio);
+            })
+            ->when($estado, function ($query) use ($estado) {
+                $query->where('ESTADO_OPERATIVO', $estado);
+            })
+            ->when($buscar !== '', function ($query) use ($buscar) {
+                $query->where(function ($q) use ($buscar) {
+                    $q->where('CAMA', 'like', "%{$buscar}%")
+                        ->orWhere('SERVICIO', 'like', "%{$buscar}%")
+                        ->orWhere('ESPECIALIDAD', 'like', "%{$buscar}%")
+                        ->orWhere('TIPO_CAMA', 'like', "%{$buscar}%")
+                        ->orWhere('ESTADO_CAMA', 'like', "%{$buscar}%")
+                        ->orWhere('PACIENTE', 'like', "%{$buscar}%");
+                });
+            })
+            ->orderBy('SERVICIO')
+            ->orderBy('CAMA')
+            ->paginate(30)
+            ->withQueryString();
+
+        $resumen = DB::connection('sigh')
+            ->table('dashboard.vw_emergencia_camas_servicio')
+            ->selectRaw("
+            COUNT(*) AS total_camas,
+            SUM(CASE WHEN ESTADO_OPERATIVO = 'OCUPADA' THEN 1 ELSE 0 END) AS ocupadas,
+            SUM(CASE WHEN ESTADO_OPERATIVO = 'LIBRE' THEN 1 ELSE 0 END) AS libres
+        ")
+            ->first();
+        $resumenServicio = null;
+
+        if ($servicio) {
+
+            $resumenServicio = DB::connection('sigh')
+                ->table('dashboard.vw_emergencia_camas_servicio')
+                ->where('SERVICIO', $servicio)
+                ->selectRaw("
+            COUNT(*) AS total,
+            SUM(CASE WHEN ESTADO_OPERATIVO='OCUPADA' THEN 1 ELSE 0 END) AS ocupadas,
+            SUM(CASE WHEN ESTADO_OPERATIVO='LIBRE' THEN 1 ELSE 0 END) AS libres
+        ")
+                ->first();
+        }
+
+        return view('emergencia.camas_servicio', compact(
+            'camas',
+            'servicios',
+            'estados',
+            'servicio',
+            'estado',
+            'buscar',
+            'resumenServicio',
+            'resumen'
+        ));
     }
 }

@@ -1,9 +1,19 @@
 <x-guest-layout>
     <style>
+        :root {
+            --hbt-primary: #0F6CBD;
+            --hbt-secondary: #EAF4FD;
+            --hbt-dark: #0B4F8A;
+            --hbt-accent: #2E86DE;
+            --hbt-bg: #F4F8FB;
+            --hbt-border: #D6E4F0;
+            --hbt-text: #1F2937;
+        }
+
         body {
             background:
-                radial-gradient(circle at top left, rgba(22, 160, 133, .16), transparent 35%),
-                linear-gradient(135deg, #f7fbfa, #eef7f4) !important;
+                radial-gradient(circle at top left, rgba(46, 134, 222, .16), transparent 35%),
+                linear-gradient(135deg, var(--hbt-bg), #ffffff) !important;
         }
 
         .login-title {
@@ -19,49 +29,61 @@
         .login-title h1 {
             font-size: 22px;
             font-weight: 800;
-            color: #0b6b55;
+            color: var(--hbt-dark);
             margin: 0;
         }
 
         .login-title p {
             font-size: 14px;
-            color: #6b7280;
+            color: #64748b;
             margin-top: 6px;
         }
 
         .hbt-input {
             border-radius: 12px !important;
-            border: 1px solid #dbe7e4 !important;
+            border: 1px solid var(--hbt-border) !important;
             padding: 12px 14px !important;
         }
 
         .hbt-input:focus {
-            border-color: #0f8b6f !important;
-            box-shadow: 0 0 0 3px rgba(15, 139, 111, .15) !important;
+            border-color: var(--hbt-accent) !important;
+            box-shadow: 0 0 0 3px rgba(46, 134, 222, .18) !important;
         }
 
         .hbt-button {
-            background: linear-gradient(135deg, #0f8b6f, #16a085) !important;
+            background: linear-gradient(135deg, var(--hbt-primary), var(--hbt-accent)) !important;
             border-radius: 12px !important;
             padding: 12px 20px !important;
             font-weight: 800 !important;
             letter-spacing: .3px;
         }
 
+        .hbt-button:hover {
+            background: linear-gradient(135deg, var(--hbt-dark), var(--hbt-primary)) !important;
+        }
+
         .hbt-link {
-            color: #0f8b6f !important;
+            color: var(--hbt-primary) !important;
             font-weight: 600;
+        }
+
+        .hbt-link:hover {
+            color: var(--hbt-dark) !important;
         }
 
         .hbt-remember {
             color: #374151;
         }
+
+        input[type="checkbox"] {
+            color: var(--hbt-primary) !important;
+        }
     </style>
 
     <div class="login-title">
-        <img src="{{ asset('img/logo-hbt.png') }}" alt="Hospital Belén de Trujillo">
+        <img src="{{ asset('img/logo_hbt2.jpg') }}" alt="Hospital Belén de Trujillo">
         <h1>HBT</h1>
-        <p>Dashboard de Consulta Externa</p>
+        <p>Consulta Externa · Emergencia · Hospitalización</p>
     </div>
 
     <x-auth-session-status class="mb-4" :status="session('status')" />
@@ -103,7 +125,7 @@
             <label for="remember_me" class="inline-flex items-center">
                 <input id="remember_me"
                     type="checkbox"
-                    class="rounded border-gray-300 text-green-700 shadow-sm focus:ring-green-600"
+                    class="rounded border-gray-300 shadow-sm"
                     name="remember">
 
                 <span class="ms-2 text-sm hbt-remember">Recordarme</span>

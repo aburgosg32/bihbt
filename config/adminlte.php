@@ -261,7 +261,7 @@ return [
     */
 
     'use_route_url' => false,
-    'dashboard_url' => 'home',
+    'dashboard_url' => 'emergencia/dashboard',
     'logout_url' => 'logout',
     'login_url' => 'login',
     'register_url' => 'register',
@@ -303,7 +303,7 @@ return [
     */
     'menu' => [
 
-        [
+        /*  [
             'text' => 'CONSULTA EXTERNA',
             'icon' => 'fas fa-stethoscope',
             'submenu' => [
@@ -321,11 +321,12 @@ return [
                 ],
 
             ],
-        ],
+        ],*/
 
         [
             'text' => 'EMERGENCIA',
             'icon' => 'fas fa-ambulance',
+            'active' => ['emergencia/*'],
             'submenu' => [
 
                 [
@@ -342,9 +343,15 @@ return [
                     'active' => ['emergencia/pacientes-activos'],
                 ],
 
+                [
+                    'text' => 'Camas por Servicio',
+                    'url'  => 'emergencia/camas-servicio',
+                    'icon' => 'fas fa-bed',
+                    'active' => ['emergencia/camas-servicio'],
+                ],
+
             ],
         ],
-
         [
             'text' => 'HOSPITALIZACIÓN',
             'icon' => 'fas fa-hospital-user',
@@ -362,6 +369,12 @@ return [
                     'url'  => 'hospitalizacion/pacientes-activos',
                     'icon' => 'fas fa-bed',
                     'active' => ['hospitalizacion/pacientes-activos'],
+                ],
+                [
+                    'text' => 'Camas por Servicio',
+                    'url'  => 'hospitalizacion/camas-servicio',
+                    'icon' => 'fas fa-bed',
+                    'active' => ['hospitalizacion/camas-servicio'],
                 ],
 
             ],

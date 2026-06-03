@@ -16,63 +16,37 @@
         height: 310px;
     }
 
-    .hbt-header-date {
-        background: linear-gradient(135deg, #0f8b6f, #16a085);
-        color: #fff;
-        padding: 9px 14px;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 14px;
-        box-shadow: 0 8px 18px rgba(15, 139, 111, .18);
-    }
-
     .small-box {
         min-height: 118px;
-        border-radius: 16px;
         overflow: hidden;
     }
 
     .small-box .inner h3 {
         font-size: 34px;
-        font-weight: 800;
+        font-weight: 700;
     }
 
     .small-box .inner p {
-        font-weight: 600;
+        font-weight: 500;
         font-size: 14px;
     }
 
-    .card {
-        border-radius: 16px;
-        overflow: hidden;
+    .card-header .card-title {
+        font-weight: 600;
     }
 
-    .card-header {
-        padding: 11px 16px;
-    }
-
-    .card-body {
-        padding: 18px;
-    }
-
-    .content-header {
-        padding-bottom: 8px;
-    }
-
-    .content {
-        padding-top: 5px;
+    .dashboard-action {
+        margin-top: 18px;
     }
 </style>
 @stop
 
 @section('content_header')
-
 <div class="d-flex justify-content-between align-items-center mb-2">
     <div>
-        <h1 class="font-weight-bold text-success mb-1">
+        <h1 class="mb-1">
             Dashboard Hospitalización
         </h1>
-
         <small class="text-muted">
             Hospital Belén de Trujillo · Hospitalización
         </small>
@@ -87,62 +61,35 @@
     </div>
 </div>
 
-<form method="GET"
-    action="{{ route('hospitalizacion.dashboard') }}"
-    class="card mb-3">
-
+<form method="GET" action="{{ route('hospitalizacion.dashboard') }}" class="card mb-3">
     <div class="card-body py-3">
-
         <div class="row align-items-end">
 
             <div class="col-md-3">
-                <label class="font-weight-bold text-muted">
-                    Fecha inicio
-                </label>
-
-                <input type="date"
-                    name="fecha_inicio"
-                    value="{{ $fechaInicio }}"
-                    class="form-control">
+                <label class="font-weight-bold text-muted">Fecha inicio</label>
+                <input type="date" name="fecha_inicio" value="{{ $fechaInicio }}" class="form-control">
             </div>
 
             <div class="col-md-3">
-                <label class="font-weight-bold text-muted">
-                    Fecha fin
-                </label>
-
-                <input type="date"
-                    name="fecha_fin"
-                    value="{{ $fechaFin }}"
-                    class="form-control">
+                <label class="font-weight-bold text-muted">Fecha fin</label>
+                <input type="date" name="fecha_fin" value="{{ $fechaFin }}" class="form-control">
             </div>
 
             <div class="col-md-3">
-                <button type="submit"
-                    class="btn btn-success btn-block">
-
-                    <i class="fas fa-filter mr-1"></i>
-                    Filtrar
-
+                <button type="submit" class="btn btn-success btn-block">
+                    <i class="fas fa-filter mr-1"></i> Filtrar
                 </button>
             </div>
 
             <div class="col-md-3">
-                <a href="{{ route('hospitalizacion.dashboard') }}"
-                    class="btn btn-outline-secondary btn-block">
-
-                    <i class="fas fa-sync-alt mr-1"></i>
-                    Limpiar
-
+                <a href="{{ route('hospitalizacion.dashboard') }}" class="btn btn-outline-secondary btn-block">
+                    <i class="fas fa-sync-alt mr-1"></i> Limpiar
                 </a>
             </div>
 
         </div>
-
     </div>
-
 </form>
-
 @stop
 
 @section('content')
@@ -155,7 +102,6 @@
                 <h3>{{ $totalAtenciones }}</h3>
                 <p>Total Hospitalizaciones</p>
             </div>
-
             <div class="icon">
                 <i class="fas fa-hospital-user"></i>
             </div>
@@ -168,7 +114,6 @@
                 <h3>{{ $pacientesActivos }}</h3>
                 <p>Pacientes Activos</p>
             </div>
-
             <div class="icon">
                 <i class="fas fa-bed"></i>
             </div>
@@ -179,9 +124,8 @@
         <div class="small-box bg-warning">
             <div class="inner">
                 <h3>{{ $pacientesEgresados }}</h3>
-                <p>Pacientes Egresados</p>
+                <p>Egresados</p>
             </div>
-
             <div class="icon">
                 <i class="fas fa-door-open"></i>
             </div>
@@ -194,7 +138,6 @@
                 <h3>{{ $sinCierreAdministrativo }}</h3>
                 <p>Sin Cierre Administrativo</p>
             </div>
-
             <div class="icon">
                 <i class="fas fa-exclamation-triangle"></i>
             </div>
@@ -206,26 +149,22 @@
 <div class="row">
 
     <div class="col-lg-4">
-
         <div class="card">
             <div class="card-header bg-success">
                 <h3 class="card-title">
                     <i class="fas fa-heartbeat mr-1"></i>
-                    Distribución por Gravedad
+                    Camas Ocupadas por Servicio
                 </h3>
             </div>
-
             <div class="card-body">
                 <div class="chart-box">
-                    <canvas id="chartGravedad"></canvas>
+                    <canvas id="chartCamasOcupadas"></canvas>
                 </div>
             </div>
         </div>
-
     </div>
 
     <div class="col-lg-4">
-
         <div class="card">
             <div class="card-header bg-success">
                 <h3 class="card-title">
@@ -233,37 +172,29 @@
                     Fuente de Financiamiento
                 </h3>
             </div>
-
             <div class="card-body">
                 <div class="chart-box">
                     <canvas id="chartFinanciamiento"></canvas>
                 </div>
             </div>
         </div>
-
     </div>
 
     <div class="col-lg-4">
-
         <div class="small-box bg-success">
             <div class="inner">
                 <h3>{{ $serviciosActivos }}</h3>
-                <p>Servicios Activos</p>
+                <p>Servicios con Pacientes Activos</p>
             </div>
-
             <div class="icon">
                 <i class="fas fa-hospital"></i>
             </div>
         </div>
 
-        <a href="{{ route('hospitalizacion.pacientes-activos') }}"
-            class="btn btn-success btn-block">
-
+        <a href="{{ route('hospitalizacion.pacientes-activos') }}" class="btn btn-success btn-block dashboard-action">
             <i class="fas fa-list mr-1"></i>
-            Ver Pacientes Activos
-
+            Ver Pacientes Activos por Servicio
         </a>
-
     </div>
 
 </div>
@@ -271,26 +202,22 @@
 <div class="row">
 
     <div class="col-lg-6">
-
         <div class="card">
             <div class="card-header bg-success">
                 <h3 class="card-title">
                     <i class="fas fa-chart-bar mr-1"></i>
-                    Pacientes Activos por Servicio
+                    Pacientes Activos por Servicio Actual
                 </h3>
             </div>
-
             <div class="card-body">
                 <div class="chart-box-large">
                     <canvas id="chartServicios"></canvas>
                 </div>
             </div>
         </div>
-
     </div>
 
     <div class="col-lg-6">
-
         <div class="card">
             <div class="card-header bg-success">
                 <h3 class="card-title">
@@ -298,14 +225,12 @@
                     Flujo Horario de Ingresos
                 </h3>
             </div>
-
             <div class="card-body">
                 <div class="chart-box-large">
                     <canvas id="chartFlujo"></canvas>
                 </div>
             </div>
         </div>
-
     </div>
 
 </div>
@@ -313,205 +238,183 @@
 @stop
 
 @section('js')
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
     const hbtColors = [
-        '#0f8b6f',
-        '#16a085',
-        '#1abc9c',
-        '#27ae60',
-        '#2ecc71',
-        '#f59e0b',
-        '#ef4444',
-        '#3b82f6',
-        '#6366f1',
-        '#64748b'
+        '#0078D4',
+        '#2899F5',
+        '#005A9E',
+        '#106EBE',
+        '#40A9FF',
+        '#F2C811',
+        '#D83B01',
+        '#107C10',
+        '#5C2D91',
+        '#605E5C'
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | GRAVEDAD
-    |--------------------------------------------------------------------------
-    */
-
-    new Chart(document.getElementById('chartGravedad'), {
-        type: 'pie',
-
-        data: {
-            labels: @json($gravedad-> pluck('TIPOGRAVEDAD')),
-
-            datasets: [{
-                data: @json($gravedad-> pluck('total')),
-                backgroundColor: hbtColors,
-                borderColor: '#ffffff',
-                borderWidth: 2
-            }]
-        },
-
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-
-            plugins: {
-                legend: {
-                    position: 'bottom',
-
-                    labels: {
-                        usePointStyle: true,
-                        font: {
-                            size: 10
-                        }
-                    }
-                }
-            }
-        }
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | FINANCIAMIENTO
-    |--------------------------------------------------------------------------
-    */
-
-    new Chart(document.getElementById('chartFinanciamiento'), {
-        type: 'doughnut',
-
-        data: {
-            labels: @json($financiamiento-> pluck('FUENTEFINANCIAMIENTO')),
-
-            datasets: [{
-                data: @json($financiamiento-> pluck('total')),
-                backgroundColor: hbtColors,
-                borderColor: '#ffffff',
-                borderWidth: 2
-            }]
-        },
-
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-
-            plugins: {
-                legend: {
-                    position: 'bottom',
-
-                    labels: {
-                        usePointStyle: true,
-                        font: {
-                            size: 10
-                        }
-                    }
-                }
-            }
-        }
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | SERVICIOS
-    |--------------------------------------------------------------------------
-    */
-
-    new Chart(document.getElementById('chartServicios'), {
+    new Chart(document.getElementById('chartCamasOcupadas'), {
         type: 'bar',
-
         data: {
-            labels: @json($servicios-> pluck('SERVICIOACTUAL')),
-
+            labels: @json($camasOcupadas -> pluck('SERVICIOACTUAL')),
             datasets: [{
-                label: 'Pacientes activos',
-                data: @json($servicios-> pluck('total')),
-                backgroundColor: hbtColors,
-                borderRadius: 8
+                label: 'Camas ocupadas',
+                data: @json($camasOcupadas -> pluck('total')),
+                backgroundColor: '#0078D4',
+                borderColor: '#005A9E',
+                borderWidth: 1
             }]
         },
-
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-
-            plugins: {
-                legend: {
-                    labels: {
-                        usePointStyle: true
-                    }
-                }
-            },
-
-            scales: {
-                x: {
-                    beginAtZero: true,
-
-                    ticks: {
-                        precision: 0
-                    }
-                }
-            }
-        }
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | FLUJO HORARIO
-    |--------------------------------------------------------------------------
-    */
-
-    new Chart(document.getElementById('chartFlujo'), {
-        type: 'line',
-
-        data: {
-            labels: @json($flujoHorario-> pluck('hora')-> map(fn($h) => $h.
-                ':00')),
-
-            datasets: [{
-                label: 'Ingresos',
-                data: @json($flujoHorario-> pluck('total')),
-                borderColor: '#0f8b6f',
-                backgroundColor: 'rgba(15,139,111,0.15)',
-                pointBackgroundColor: '#0f8b6f',
-                pointBorderColor: '#ffffff',
-                pointRadius: 5,
-                tension: 0.4,
-                fill: true
-            }]
-        },
-
         options: {
             responsive: true,
             maintainAspectRatio: false,
 
             plugins: {
                 legend: {
-                    labels: {
-                        usePointStyle: true
-                    }
+                    display: false
                 }
             },
 
             scales: {
                 y: {
                     beginAtZero: true,
-
                     ticks: {
                         precision: 0
+                    },
+                    grid: {
+                        color: '#EDEBE9'
+                    }
+                },
+
+                x: {
+                    grid: {
+                        display: false
                     }
                 }
             }
         }
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | AUTO REFRESH
-    |--------------------------------------------------------------------------
-    */
+    new Chart(document.getElementById('chartFinanciamiento'), {
+        type: 'doughnut',
+        data: {
+            labels: @json($financiamiento -> pluck('FUENTEFINANCIAMIENTO')),
+            datasets: [{
+                data: @json($financiamiento -> pluck('total')),
+                backgroundColor: hbtColors,
+                borderColor: '#ffffff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '55%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        font: {
+                            size: 11
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('chartServicios'), {
+        type: 'bar',
+        data: {
+            labels: @json($servicios -> pluck('SERVICIOACTUAL')),
+            datasets: [{
+                label: 'Pacientes activos',
+                data: @json($servicios -> pluck('total')),
+                backgroundColor: '#0078D4',
+                borderColor: '#005A9E',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        usePointStyle: true
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    },
+                    grid: {
+                        color: '#EDEBE9'
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('chartFlujo'), {
+        type: 'line',
+        data: {
+            labels: @json($flujoHorario -> pluck('hora') -> map(fn($h) => $h.
+                ':00')),
+            datasets: [{
+                label: 'Ingresos',
+                data: @json($flujoHorario -> pluck('total')),
+                borderColor: '#0078D4',
+                backgroundColor: 'rgba(0,120,212,0.12)',
+                pointBackgroundColor: '#0078D4',
+                pointBorderColor: '#ffffff',
+                pointRadius: 5,
+                tension: 0.35,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        usePointStyle: true
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    },
+                    grid: {
+                        color: '#EDEBE9'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
 
     setTimeout(() => {
         location.reload();
     }, 60000);
 </script>
-
 @stop

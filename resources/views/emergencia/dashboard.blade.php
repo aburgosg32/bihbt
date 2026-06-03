@@ -16,51 +16,27 @@
         height: 310px;
     }
 
-    .hbt-header-date {
-        background: linear-gradient(135deg, #0f8b6f, #16a085);
-        color: #fff;
-        padding: 9px 14px;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 14px;
-        box-shadow: 0 8px 18px rgba(15, 139, 111, .18);
-    }
-
     .small-box {
         min-height: 118px;
-        border-radius: 16px;
         overflow: hidden;
     }
 
     .small-box .inner h3 {
         font-size: 34px;
-        font-weight: 800;
+        font-weight: 700;
     }
 
     .small-box .inner p {
-        font-weight: 600;
+        font-weight: 500;
         font-size: 14px;
     }
 
-    .card {
-        border-radius: 16px;
-        overflow: hidden;
+    .card-header .card-title {
+        font-weight: 600;
     }
 
-    .card-header {
-        padding: 11px 16px;
-    }
-
-    .card-body {
-        padding: 18px;
-    }
-
-    .content-header {
-        padding-bottom: 8px;
-    }
-
-    .content {
-        padding-top: 5px;
+    .dashboard-action {
+        margin-top: 18px;
     }
 </style>
 @stop
@@ -68,7 +44,7 @@
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center mb-2">
     <div>
-        <h1 class="font-weight-bold text-success mb-1">
+        <h1 class="mb-1">
             Dashboard Emergencia
         </h1>
         <small class="text-muted">
@@ -77,7 +53,8 @@
     </div>
 
     <div class="hbt-header-date">
-        Rango: {{ \Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') }}
+        Rango:
+        {{ \Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') }}
         -
         {{ \Carbon\Carbon::parse($fechaFin)->format('d/m/Y') }}
         · Hora: {{ now()->format('H:i') }}
@@ -214,7 +191,7 @@
             </div>
         </div>
 
-        <a href="{{ route('emergencia.pacientes-activos') }}" class="btn btn-success btn-block">
+        <a href="{{ route('emergencia.pacientes-activos') }}" class="btn btn-success btn-block dashboard-action">
             <i class="fas fa-list mr-1"></i>
             Ver Pacientes Activos por Servicio
         </a>
@@ -265,16 +242,16 @@
 
 <script>
     const hbtColors = [
-        '#0f8b6f',
-        '#16a085',
-        '#1abc9c',
-        '#27ae60',
-        '#2ecc71',
-        '#f59e0b',
-        '#ef4444',
-        '#3b82f6',
-        '#6366f1',
-        '#64748b'
+        '#0078D4',
+        '#2899F5',
+        '#005A9E',
+        '#106EBE',
+        '#40A9FF',
+        '#F2C811',
+        '#D83B01',
+        '#107C10',
+        '#5C2D91',
+        '#605E5C'
     ];
 
     new Chart(document.getElementById('chartGravedad'), {
@@ -294,7 +271,10 @@
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { usePointStyle: true, font: { size: 10 } }
+                    labels: {
+                        usePointStyle: true,
+                        font: { size: 11 }
+                    }
                 }
             }
         }
@@ -314,10 +294,14 @@
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '55%',
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { usePointStyle: true, font: { size: 10 } }
+                    labels: {
+                        usePointStyle: true,
+                        font: { size: 11 }
+                    }
                 }
             }
         }
@@ -330,8 +314,9 @@
             datasets: [{
                 label: 'Pacientes activos',
                 data: @json($servicios->pluck('total')),
-                backgroundColor: hbtColors,
-                borderRadius: 8
+                backgroundColor: '#0078D4',
+                borderColor: '#005A9E',
+                borderWidth: 1
             }]
         },
         options: {
@@ -339,10 +324,21 @@
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { labels: { usePointStyle: true } }
+                legend: {
+                    labels: {
+                        usePointStyle: true
+                    }
+                }
             },
             scales: {
-                x: { beginAtZero: true, ticks: { precision: 0 } }
+                x: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 },
+                    grid: { color: '#EDEBE9' }
+                },
+                y: {
+                    grid: { display: false }
+                }
             }
         }
     });
@@ -354,12 +350,12 @@
             datasets: [{
                 label: 'Ingresos',
                 data: @json($flujoHorario->pluck('total')),
-                borderColor: '#0f8b6f',
-                backgroundColor: 'rgba(15,139,111,0.15)',
-                pointBackgroundColor: '#0f8b6f',
+                borderColor: '#0078D4',
+                backgroundColor: 'rgba(0,120,212,0.12)',
+                pointBackgroundColor: '#0078D4',
                 pointBorderColor: '#ffffff',
                 pointRadius: 5,
-                tension: 0.4,
+                tension: 0.35,
                 fill: true
             }]
         },
@@ -367,10 +363,21 @@
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { labels: { usePointStyle: true } }
+                legend: {
+                    labels: {
+                        usePointStyle: true
+                    }
+                }
             },
             scales: {
-                y: { beginAtZero: true, ticks: { precision: 0 } }
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 },
+                    grid: { color: '#EDEBE9' }
+                },
+                x: {
+                    grid: { display: false }
+                }
             }
         }
     });
