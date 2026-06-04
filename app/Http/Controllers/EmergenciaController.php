@@ -267,4 +267,30 @@ class EmergenciaController extends Controller
             'resumen'
         ));
     }
+    public function consumo($cuenta)
+    {
+        $consumos = DB::connection('sigh')->select(
+            "EXEC dbo.FacturacionServicioDespachoXcuenta ?",
+            [$cuenta]
+        );
+
+        return response()->json([
+            'ok' => true,
+            'cuenta' => $cuenta,
+            'consumos' => $consumos
+        ]);
+    }
+    public function farmacia($cuenta)
+    {
+        $farmacia = DB::connection('sigh')->select(
+            "EXEC dbo.RecetaDetalleSoloFarmaciaSeleccionarXidCuentaAtencion ?, ?",
+            [$cuenta, ' ']
+        );
+
+        return response()->json([
+            'ok' => true,
+            'cuenta' => $cuenta,
+            'farmacia' => $farmacia
+        ]);
+    }
 }

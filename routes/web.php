@@ -77,6 +77,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/emergencia/camas-servicio', [EmergenciaController::class, 'camasServicio'])
         ->name('emergencia.camas-servicio');
 
+    Route::get('/emergencia/consumo/{cuenta}', [EmergenciaController::class, 'consumo'])
+        ->name('emergencia.consumo');
+
+    Route::get('/emergencia/farmacia/{cuenta}', [EmergenciaController::class, 'farmacia'])
+        ->name('emergencia.farmacia');
+
     Route::get('/emergencia/diagnosticos/{idAtencion}', [EmergenciaController::class, 'diagnosticos'])
         ->name('emergencia.diagnosticos');
 });
@@ -94,9 +100,15 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/hospitalizacion/pacientes-activos', [HospitalizacionController::class, 'pacientesActivos'])
         ->name('hospitalizacion.pacientes-activos');
-        
+
     Route::get('/hospitalizacion/camas-servicio', [HospitalizacionController::class, 'camasServicio'])
         ->name('hospitalizacion.camas-servicio');
+        
+    Route::get('/hospitalizacion/consumo/{cuenta}', [HospitalizacionController::class, 'consumo'])
+        ->name('hospitalizacion.consumo');
+
+    Route::get('/hospitalizacion/farmacia/{cuenta}', [HospitalizacionController::class, 'farmacia'])
+        ->name('hospitalizacion.farmacia');
 
     Route::get('/hospitalizacion/diagnosticos/{idAtencion}', [HospitalizacionController::class, 'diagnosticos'])
         ->name('hospitalizacion.diagnosticos');
