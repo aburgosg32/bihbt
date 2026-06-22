@@ -6,6 +6,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResumenOperativoController;
 use App\Http\Controllers\EmergenciaController;
 use App\Http\Controllers\HospitalizacionController;
+use App\Http\Controllers\RadiologiaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,6 +59,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/consulta-externa', [ResumenOperativoController::class, 'index'])
         ->name('consulta.dashboard');
+
+    Route::get('/consulta-externa/pacientes-consultorio', [ResumenOperativoController::class, 'pacientesConsultorio'])
+        ->name('consulta.pacientes-consultorio');
 });
 
 /*
@@ -103,7 +107,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/hospitalizacion/camas-servicio', [HospitalizacionController::class, 'camasServicio'])
         ->name('hospitalizacion.camas-servicio');
-        
+
     Route::get('/hospitalizacion/consumo/{cuenta}', [HospitalizacionController::class, 'consumo'])
         ->name('hospitalizacion.consumo');
 
@@ -112,6 +116,29 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/hospitalizacion/diagnosticos/{idAtencion}', [HospitalizacionController::class, 'diagnosticos'])
         ->name('hospitalizacion.diagnosticos');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Radiologia
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('radiologia')->name('radiologia.')->group(function () {
+    Route::get('/citas', [RadiologiaController::class, 'citas'])->name('citas');
+    Route::get('/buscar-cuenta/{cuenta}', [RadiologiaController::class, 'buscarCuenta'])
+        ->name('buscarCuenta');
+    Route::post('/citas/store', [RadiologiaController::class, 'store'])->name('store');
+    Route::get('/citas/{id}/ticket', [RadiologiaController::class, 'ticket'])->name('ticket');
+    Route::get('/dashboard', [RadiologiaController::class, 'dashboard'])->name('dashboard');
+    Route::get('/rayos-x', [RadiologiaController::class, 'rayosx'])->name('rayosx');
+    Route::get('/tomografias', [RadiologiaController::class, 'tomografias'])->name('tomografias');
+    Route::get('/ecografias', [RadiologiaController::class, 'ecografias'])->name('ecografias');
+    Route::get(
+        '/buscar-procedimiento/{codigo}',
+        [RadiologiaController::class, 'buscarProcedimiento']
+    )
+        ->name('buscarProcedimiento');
 });
 
 require __DIR__ . '/auth.php';

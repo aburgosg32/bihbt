@@ -303,7 +303,7 @@ return [
     */
     'menu' => [
 
-        /*  [
+        [
             'text' => 'CONSULTA EXTERNA',
             'icon' => 'fas fa-stethoscope',
             'submenu' => [
@@ -315,13 +315,14 @@ return [
                 ],
 
                 [
-                    'text' => 'Producción Médica',
-                    'url'  => 'produccion-medica',
-                    'icon' => 'fas fa-user-md',
+                    'text' => 'Atenciones CE',
+                    'url'  => 'consulta-externa/pacientes-consultorio',
+                    'icon' => 'fas fa-user-injured',
+                    'active' => ['consulta-externa/pacientes-consultorio'],
                 ],
 
             ],
-        ],*/
+        ],
 
         [
             'text' => 'EMERGENCIA',
@@ -379,7 +380,45 @@ return [
 
             ],
         ],
+           [
+            'text' => 'RADIOLOGIA',
+            'icon' => 'fas fa-x-ray',
+            'submenu' => [
 
+                [
+                    'text' => 'Dashboard',
+                    'url'  => 'radiologia/dashboard',
+                    'icon' => 'fas fa-chart-pie',
+                    'active' => ['radiologia/dashboard'],
+                ],
+
+                [
+                    'text' => 'Citas',
+                    'url'  => 'radiologia/citas',
+                    'icon' => 'fas fa-calendar-check',
+                    'active' => ['radiologia/citas'],
+                ],
+                [
+                    'text' => 'Rayos X',
+                    'url'  => 'radiologia/rayos-x',
+                    'icon' => 'fas fa-radiation',
+                    'active' => ['radiologia/rayos-x'],
+                ],
+                [
+                    'text' => 'Tomografías',
+                    'url'  => 'radiologia/tomografias',
+                    'icon' => 'fas fa-procedures',
+                    'active' => ['radiologia/tomografias'],
+                ],
+                [
+                    'text' => 'Ecografías',
+                    'url'  => 'radiologia/ecografias',
+                    'icon' => 'fas fa-wave-square',
+                    'active' => ['radiologia/ecografias'],
+                ],
+
+            ],
+        ],
     ],
     /*
     |--------------------------------------------------------------------------

@@ -142,4 +142,83 @@ class ResumenOperativoController extends Controller
             'financiamientoData'
         ));
     }
+    public function pacientesConsultorio(Request $request)
+    {
+        $fechaInicio = $request->fecha_inicio ?? now()->format('Y-m-d');
+        $fechaFin = $request->fecha_fin ?? now()->format('Y-m-d');
+
+        $consultorio = $request->consultorio;
+        $estado = $request->estado;
+        $buscar = trim($request->buscar ?? '');
+
+        $consultorios = DB::connection('sigh')
+            ->table('dashboard.vw_consulta_externa_pacientes')
+            ->select('CONSULTORIO')
+            ->distinct()
+            ->orderBy('CONSULTORIO')
+            ->pluck('CONSULTORIO');
+
+        $query = DB::connection('sigh')
+            ->table('dashboard.vw_consulta_externa_pacientes')
+            ->whereBetween('FECHA_INGRESO', [$fechaInicio, $fechaFin]);
+
+        if ($consultorio) {
+            $query->where('CONSULTORIO', $consultorio);
+        }
+
+        if ($estado) {
+            $query->where('ESTADO_PACIENTE', $estado);
+        }
+
+        if (!empty($buscar)) {
+            $query->where(function ($q) use ($buscar) {
+                $q->where('NROCUENTA', 'like', "%{$buscar}%")
+                    ->orWhere('PACIENTE', 'like', "%{$buscar}%")
+                    ->orWhere('HISTORIA_CLINICA', 'like', "%{$buscar}%")
+                    ->orWhere('TELEFONO', 'like', "%{$buscar}%");
+            });
+        }
+
+        $pacientes = $query
+            ->orderBy('CONSULTORIO')
+            ->orderBy('HORA_INGRESO')
+            ->paginate(25)
+            ->withQueryString();
+
+        $resumen = DB::connection('sigh')
+            ->table('dashboard.vw_consulta_externa_pacientes')
+            ->whereBetween('FECHA_INGRESO', [$fechaInicio, $fechaFin]);
+
+        if ($consultorio) {
+            $resumen->where('CONSULTORIO', $consultorio);
+        }
+
+        $totalPacientes = (clone $resumen)->count();
+
+        $totalAtendidos = (clone $resumen)
+            ->where('ESTADO_PACIENTE', 'ATENDIDO')
+            ->count();
+
+        $totalPendientes = (clone $resumen)
+            ->where('ESTADO_PACIENTE', 'PENDIENTE')
+            ->count();
+
+        $consultoriosActivos = (clone $resumen)
+            ->distinct('CONSULTORIO')
+            ->count('CONSULTORIO');
+
+        return view('consulta_externa.pacientes_consultorio', compact(
+            'pacientes',
+            'consultorios',
+            'fechaInicio',
+            'fechaFin',
+            'consultorio',
+            'estado',
+            'buscar',
+            'totalPacientes',
+            'totalAtendidos',
+            'totalPendientes',
+            'consultoriosActivos'
+        ));
+    }
 }
