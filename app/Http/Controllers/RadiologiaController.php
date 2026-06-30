@@ -24,7 +24,7 @@ class RadiologiaController extends Controller
             })
             ->orderBy('fecha_cita', 'desc')
             ->orderBy('hora_cita', 'desc')
-            ->paginate(15)
+            ->paginate(20)
             ->appends($request->query());
 
         return view('radiologia.citas', compact('citas', 'buscar'));
@@ -74,22 +74,31 @@ class RadiologiaController extends Controller
             return back()->with('error', 'No se pueden registrar citas los domingos.');
         }
 
-        $horasPermitidas = [
-            '08:00',
-            '08:30',
-            '09:00',
-            '09:30',
-            '10:00',
-            '10:30',
-            '11:00',
-            '11:30',
-            '12:00',
-            '12:30',
-            '13:00',
-        ];
+        $horaInicio = '07:00';
+        $horaFin = '13:00';
+
+        $intervalo = match ($request->modalidad) {
+            'RAYOS X' => 10,
+            'TOMOGRAFIA' => 15,
+            'ECOGRAFIA' => 20,
+            default => 30,
+        };
+
+        $horasPermitidas = [];
+
+        $inicio = Carbon::createFromFormat('H:i', $horaInicio);
+        $fin = Carbon::createFromFormat('H:i', $horaFin);
+
+        while ($inicio <= $fin) {
+            $horasPermitidas[] = $inicio->format('H:i');
+            $inicio->addMinutes($intervalo);
+        }
 
         if (!in_array($request->hora_cita, $horasPermitidas)) {
-            return back()->with('error', 'La hora seleccionada no está permitida.');
+            return response()->json([
+                'success' => false,
+                'message' => 'La hora seleccionada no está permitida para la modalidad.'
+            ], 422);
         }
 
         $existe = RadiologiaCita::where('modalidad', $request->modalidad)
@@ -104,8 +113,10 @@ class RadiologiaController extends Controller
 
         $cita = RadiologiaCita::create($request->all());
 
-        return redirect()
-            ->route('radiologia.ticket', $cita->id);
+        return response()->json([
+            'success' => true,
+            'ticket_url' => route('radiologia.ticket', $cita->id)
+        ]);
     }
 
     public function ticket($id)
@@ -137,5 +148,267 @@ class RadiologiaController extends Controller
             'success' => true,
             'data' => $procedimiento
         ]);
+    }
+    public function horariosDisponibles(Request $request)
+    {
+        $request->validate([
+            'modalidad' => 'required',
+            'fecha' => 'required|date',
+        ]);
+
+        $modalidad = $request->modalidad;
+        $fecha = $request->fecha;
+
+        $horaInicio = '07:00';
+        $horaFin = '13:00';
+
+        $intervalo = match ($modalidad) {
+            'RAYOS X' => 10,
+            'TOMOGRAFIA' => 15,
+            'ECOGRAFIA' => 20,
+            default => 30,
+        };
+
+        $horariosBase = [];
+
+        $inicio = Carbon::createFromFormat('H:i', $horaInicio);
+        $fin = Carbon::createFromFormat('H:i', $horaFin);
+
+        while ($inicio <= $fin) {
+            $horariosBase[] = $inicio->format('H:i');
+            $inicio->addMinutes($intervalo);
+        }
+
+        $ocupados = RadiologiaCita::where('modalidad', $modalidad)
+            ->where('fecha_cita', $fecha)
+            ->whereIn('estado', ['REGISTRADO', 'ATENDIDO'])
+            ->pluck('hora_cita')
+            ->map(function ($hora) {
+                return substr($hora, 0, 5);
+            })
+            ->toArray();
+
+        $horarios = collect($horariosBase)->map(function ($hora) use ($ocupados) {
+            return [
+                'hora' => $hora,
+                'ocupado' => in_array($hora, $ocupados),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'modalidad' => $modalidad,
+            'intervalo' => $intervalo,
+            'horarios' => $horarios,
+        ]);
+    }
+    public function rayosx(Request $request)
+    {
+        $buscar = $request->buscar;
+
+        $citas = RadiologiaCita::where('modalidad', 'RAYOS X')
+            ->when($buscar, function ($q) use ($buscar) {
+                $q->where(function ($query) use ($buscar) {
+                    $query->where('id_cuenta_atencion', 'like', "%{$buscar}%")
+                        ->orWhere('nro_historia_clinica', 'like', "%{$buscar}%")
+                        ->orWhere('paciente', 'like', "%{$buscar}%")
+                        ->orWhere('estudio', 'like', "%{$buscar}%");
+                });
+            })
+            ->orderBy('fecha_cita', 'desc')
+            ->orderBy('hora_cita', 'desc')
+            ->paginate(15)
+            ->appends($request->query());
+
+        return view('radiologia.rayosx', compact('citas', 'buscar'));
+    }
+    public function atenderRayosx($id)
+    {
+        $cita = RadiologiaCita::where('modalidad', 'RAYOS X')
+            ->where('id', $id)
+            ->firstOrFail();
+
+        if ($cita->estado === 'ATENDIDO') {
+            return redirect()
+                ->route('radiologia.rayosx')
+                ->with('error', 'El paciente ya fue atendido.');
+        }
+
+        $cita->update([
+            'estado' => 'ATENDIDO',
+        ]);
+
+        return redirect()
+            ->route('radiologia.rayosx')
+            ->with('success', 'Atención registrada correctamente.');
+    }
+    public function tomografias(Request $request)
+    {
+        $buscar = $request->buscar;
+
+        $citas = RadiologiaCita::where('modalidad', 'TOMOGRAFIA')
+            ->when($buscar, function ($q) use ($buscar) {
+                $q->where(function ($query) use ($buscar) {
+                    $query->where('id_cuenta_atencion', 'like', "%{$buscar}%")
+                        ->orWhere('nro_historia_clinica', 'like', "%{$buscar}%")
+                        ->orWhere('paciente', 'like', "%{$buscar}%")
+                        ->orWhere('estudio', 'like', "%{$buscar}%");
+                });
+            })
+            ->orderBy('fecha_cita', 'desc')
+            ->orderBy('hora_cita', 'desc')
+            ->paginate(15)
+            ->appends($request->query());
+
+        return view('radiologia.tomografias', compact('citas', 'buscar'));
+    }
+
+    public function atenderTomografia($id)
+    {
+        $cita = RadiologiaCita::where('modalidad', 'TOMOGRAFIA')
+            ->where('id', $id)
+            ->firstOrFail();
+
+        if ($cita->estado === 'ATENDIDO') {
+            return redirect()
+                ->route('radiologia.tomografias')
+                ->with('error', 'El paciente ya fue atendido.');
+        }
+
+        $cita->update([
+            'estado' => 'ATENDIDO',
+        ]);
+
+        return redirect()
+            ->route('radiologia.tomografias')
+            ->with('success', 'Atención registrada correctamente.');
+    }
+    public function ecografias(Request $request)
+    {
+        $buscar = $request->buscar;
+
+        $citas = RadiologiaCita::where('modalidad', 'ECOGRAFIA')
+            ->when($buscar, function ($q) use ($buscar) {
+                $q->where(function ($query) use ($buscar) {
+                    $query->where('id_cuenta_atencion', 'like', "%{$buscar}%")
+                        ->orWhere('nro_historia_clinica', 'like', "%{$buscar}%")
+                        ->orWhere('paciente', 'like', "%{$buscar}%")
+                        ->orWhere('estudio', 'like', "%{$buscar}%");
+                });
+            })
+            ->orderBy('fecha_cita', 'desc')
+            ->orderBy('hora_cita', 'desc')
+            ->paginate(15)
+            ->appends($request->query());
+
+        return view('radiologia.ecografias', compact('citas', 'buscar'));
+    }
+
+    public function atenderEcografia($id)
+    {
+        $cita = RadiologiaCita::where('modalidad', 'ECOGRAFIA')
+            ->where('id', $id)
+            ->firstOrFail();
+
+        if ($cita->estado === 'ATENDIDO') {
+            return redirect()
+                ->route('radiologia.ecografias')
+                ->with('error', 'El paciente ya fue atendido.');
+        }
+
+        $cita->update([
+            'estado' => 'ATENDIDO',
+        ]);
+
+        return redirect()
+            ->route('radiologia.ecografias')
+            ->with('success', 'Atención registrada correctamente.');
+    }
+    public function dashboard(Request $request)
+    {
+        $fechaInicio = $request->fecha_inicio ?? now()->format('Y-m-d');
+        $fechaFin = $request->fecha_fin ?? now()->format('Y-m-d');
+
+        $base = RadiologiaCita::whereBetween('fecha_cita', [$fechaInicio, $fechaFin]);
+
+        $totalCitas = (clone $base)->count();
+
+        $registrados = (clone $base)
+            ->where('estado', 'REGISTRADO')
+            ->count();
+
+        $atendidos = (clone $base)
+            ->where('estado', 'ATENDIDO')
+            ->count();
+
+        $rayosx = (clone $base)
+            ->where('modalidad', 'RAYOS X')
+            ->count();
+
+        $tomografias = (clone $base)
+            ->where('modalidad', 'TOMOGRAFIA')
+            ->count();
+
+        $ecografias = (clone $base)
+            ->where('modalidad', 'ECOGRAFIA')
+            ->count();
+
+        $porModalidad = (clone $base)
+            ->select('modalidad', DB::raw('COUNT(*) as total'))
+            ->groupBy('modalidad')
+            ->get();
+
+        $porEstado = (clone $base)
+            ->select('estado', DB::raw('COUNT(*) as total'))
+            ->groupBy('estado')
+            ->get();
+
+        $porDia = (clone $base)
+            ->select('fecha_cita', DB::raw('COUNT(*) as total'))
+            ->groupBy('fecha_cita')
+            ->orderBy('fecha_cita')
+            ->get();
+
+        $atendidosPorModalidad = (clone $base)
+            ->select('modalidad', DB::raw('COUNT(*) as total'))
+            ->where('estado', 'ATENDIDO')
+            ->groupBy('modalidad')
+            ->get();
+
+        $registradosPorModalidad = (clone $base)
+            ->select('modalidad', DB::raw('COUNT(*) as total'))
+            ->where('estado', 'REGISTRADO')
+            ->groupBy('modalidad')
+            ->get();
+
+        $topEstudios = (clone $base)
+            ->select('estudio', DB::raw('COUNT(*) as total'))
+            ->groupBy('estudio')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get();
+
+        $citasHoy = RadiologiaCita::whereDate('fecha_cita', now()->format('Y-m-d'))
+            ->orderBy('hora_cita')
+            ->limit(10)
+            ->get();
+
+        return view('radiologia.dashboard', compact(
+            'fechaInicio',
+            'fechaFin',
+            'totalCitas',
+            'registrados',
+            'atendidos',
+            'rayosx',
+            'tomografias',
+            'ecografias',
+            'porModalidad',
+            'porEstado',
+            'porDia',
+            'atendidosPorModalidad',
+            'registradosPorModalidad',
+            'topEstudios',
+            'citasHoy'
+        ));
     }
 }

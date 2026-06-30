@@ -117,8 +117,15 @@
 
     </div>
 
-    <div class="card-footer">
-        {{ $citas->links() }}
+    <div class="card-footer clearfix">
+        <div class="float-left">
+            Mostrando {{ $citas->firstItem() }} a {{ $citas->lastItem() }}
+            de {{ $citas->total() }} registros
+        </div>
+
+        <div class="float-right">
+            {{ $citas->links() }}
+        </div>
     </div>
 </div>
 
@@ -249,7 +256,7 @@
                             <div class="row">
                                 <div class="col-md-3">
                                     <label class="mb-1">Modalidad</label>
-                                    <select name="modalidad"
+                                    <select name="modalidad" id="modalidad"
                                         class="form-control form-control-sm"
                                         required>
                                         <option value="">Seleccione</option>
@@ -290,12 +297,16 @@
 
                                 <div class="col-md-3">
                                     <label class="mb-1">Hora Cita</label>
-                                    <select name="hora_cita"
+                                    <div id="contenedor_horas" class="d-flex flex-wrap">
+                                        <small class="text-muted">
+                                            Seleccione modalidad y fecha para ver horarios.
+                                        </small>
+                                    </div>
+
+                                    <input type="hidden"
+                                        name="hora_cita"
                                         id="hora_cita"
-                                        class="form-control form-control-sm"
                                         required>
-                                        <option value="">Seleccione</option>
-                                    </select>
                                     <small class="text-muted">08:00 a 13:00</small>
                                 </div>
 
@@ -335,6 +346,45 @@
 @section('js')
 
 <script>
+    document.getElementById('formCitaRadiologia')
+        .addEventListener('submit', function(e) {
+
+            e.preventDefault();
+
+            const form = this;
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                })
+                .then(response => response.json())
+                .then(result => {
+
+                    if (!result.success) {
+                        alert('Error al registrar la cita');
+                        return;
+                    }
+
+                    // abre ticket en nueva pestaña
+                    window.open(result.ticket_url, '_blank');
+
+                    // cerrar modal
+                    $('#modalAgregarCita').modal('hide');
+
+                    // recargar listado
+                    location.reload();
+
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Error al guardar');
+                });
+
+        });
     document.addEventListener('DOMContentLoaded', function() {
 
         const btnBuscarCuenta = document.getElementById('btnBuscarCuenta');
@@ -443,7 +493,7 @@
 
         });
 
-        fechaCita.addEventListener('change', function() {
+        /*  fechaCita.addEventListener('change', function() {
 
             horaCita.innerHTML = '<option value="">Seleccione</option>';
 
@@ -468,6 +518,114 @@
             });
 
         });
+*/
+
+        const modalidad = document.getElementById('modalidad');
+        const contenedorHoras = document.getElementById('contenedor_horas');
+        const horaCitaInput = document.getElementById('hora_cita');
+
+        modalidad.addEventListener('change', cargarHorarios);
+        fechaCita.addEventListener('change', cargarHorarios);
+
+        function cargarHorarios() {
+
+            const modalidadSeleccionada = modalidad.value;
+            const fechaSeleccionada = fechaCita.value;
+
+            horaCitaInput.value = '';
+
+            contenedorHoras.innerHTML = `
+        <small class="text-muted">
+            Seleccione modalidad y fecha para ver horarios.
+        </small>
+    `;
+
+            if (!modalidadSeleccionada || !fechaSeleccionada) {
+                return;
+            }
+
+            const fecha = new Date(fechaSeleccionada + 'T00:00:00');
+
+            if (fecha.getDay() === 0) {
+                alert('No se pueden registrar citas los domingos.');
+                fechaCita.value = '';
+                return;
+            }
+
+            let url = "{{ route('radiologia.horariosDisponibles') }}";
+            url += `?modalidad=${encodeURIComponent(modalidadSeleccionada)}&fecha=${encodeURIComponent(fechaSeleccionada)}`;
+
+            contenedorHoras.innerHTML = `
+        <small class="text-muted">
+            Cargando horarios...
+        </small>
+    `;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(result => {
+
+                    if (!result.success) {
+                        contenedorHoras.innerHTML = `
+                    <small class="text-danger">
+                        No se pudieron cargar los horarios.
+                    </small>
+                `;
+                        return;
+                    }
+
+                    contenedorHoras.innerHTML = '';
+
+                    result.horarios.forEach(item => {
+
+                        const boton = document.createElement('button');
+
+                        boton.type = 'button';
+                        boton.textContent = item.hora;
+
+                        // Guardamos la hora original
+                        boton.dataset.hora = item.hora;
+
+                        boton.className = 'hora-cupo';
+                        if (item.ocupado) {
+                            boton.classList.add('ocupada');
+                            boton.disabled = true;
+                            boton.title = 'Horario ocupado';
+                        } else {
+                            boton.addEventListener('click', function() {
+
+                                document.querySelectorAll('.hora-cupo').forEach(btn => {
+
+                                    btn.classList.remove('activa');
+
+                                    // Restaurar texto original
+                                    btn.innerHTML = btn.dataset.hora;
+
+                                });
+
+                                boton.classList.add('activa');
+
+                                // Agregar check visual
+                                boton.innerHTML = '✓ ' + item.hora;
+
+                                horaCitaInput.value = item.hora;
+
+                            });
+                        }
+
+                        contenedorHoras.appendChild(boton);
+
+                    });
+
+                })
+                .catch(() => {
+                    contenedorHoras.innerHTML = `
+                <small class="text-danger">
+                    Error al consultar horarios.
+                </small>
+            `;
+                });
+        }
 
         function formatearFecha(fecha) {
 
@@ -551,4 +709,42 @@
         });
 </script>
 
+@stop
+@section('css')
+<link rel="stylesheet" href="{{ asset('css/hbt.css') }}">
+
+<style>
+    .hora-cupo {
+        border: 1px solid #BBDCF5;
+        background: #EFF6FC;
+        color: #005A9E;
+        padding: 5px 8px;
+        margin: 3px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .hora-cupo:hover {
+        background: #DDEEFF;
+    }
+
+    .hora-cupo.activa {
+        background: #0078D4 !important;
+        color: #ffffff !important;
+        border: 2px solid #005A9E !important;
+        font-weight: bold;
+        box-shadow: 0 0 6px rgba(0, 120, 212, .4);
+    }
+
+    .hora-cupo.ocupada {
+        background: #EDEBE9;
+        color: #8A8886;
+        border-color: #DADCE0;
+        cursor: not-allowed;
+        opacity: .55;
+        text-decoration: line-through;
+    }
+</style>
 @stop

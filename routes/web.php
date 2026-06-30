@@ -139,6 +139,14 @@ Route::prefix('radiologia')->name('radiologia.')->group(function () {
         [RadiologiaController::class, 'buscarProcedimiento']
     )
         ->name('buscarProcedimiento');
+    Route::get('/horarios-disponibles', [RadiologiaController::class, 'horariosDisponibles'])
+        ->name('horariosDisponibles');
+    Route::post('/rayos-x/{id}/atender', [RadiologiaController::class, 'atenderRayosx'])
+        ->name('rayosx.atender');
+    Route::post('/tomografias/{id}/atender', [RadiologiaController::class, 'atenderTomografia'])
+        ->name('tomografias.atender');
+    Route::post('/ecografias/{id}/atender', [RadiologiaController::class, 'atenderEcografia'])
+        ->name('ecografias.atender');
 });
 
 require __DIR__ . '/auth.php';

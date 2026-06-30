@@ -22,6 +22,7 @@ class RadiologiaCita extends Model
         'nombre_servicio',
         'fuente_financiamiento',
         'modalidad',
+        'codigo_estudio',
         'estudio',
         'fecha_cita',
         'hora_cita',
