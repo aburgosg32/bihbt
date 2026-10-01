@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hospital Belén de Trujillo</title>
 
-    <link rel="icon" type="image/png" href="{{ asset('img/logo_hbt2.jpg') }}">
+    <link rel="icon" type="image/png" href="{{ asset('img/logo-hbt.png') }}">
+    <link rel="stylesheet" href="{{ asset('css/hbt.css') }}">
 
     <style>
         :root {
@@ -300,124 +302,102 @@
 
 <body>
 
-<header class="topbar">
-    <div class="brand">
-        <img src="{{ asset('img/logo_hbt2.jpg') }}" alt="Hospital Belén">
-        <div>
-            <h3 class="brand-title">Hospital Belén de Trujillo</h3>
-            <p class="brand-subtitle">HBT · Consulta Externa · Emergencia · Hospitalización</p>
+    <header class="topbar">
+        <div class="brand">
+            <img src="{{ asset('img/logo-hbt.png') }}" alt="Hospital Belén">
+            <div>
+                <h3 class="brand-title">Hospital Belén de Trujillo</h3>
+                <p class="brand-subtitle">HBT · Consulta Externa · Emergencia · Hospitalización</p>
+            </div>
         </div>
-    </div>
 
-    <a href="{{ route('login') }}" class="login-btn">
-        Iniciar sesión
-    </a>
-</header>
+        <a href="{{ route('login') }}" class="login-btn">
+            Iniciar sesión
+        </a>
+    </header>
 
-<main class="main">
-    <div class="grid">
+    <main class="main">
+        <div class="grid">
 
-        <section class="hero-card">
-            <div class="tag">
-                <span class="dot"></span>
-                Plataforma local de inteligencia hospitalaria
-            </div>
-
-            <h1>
-                Consulta Externa - Emergencia - Hospitalización
-            </h1>
-
-            <p class="description">
-                Sistema de monitoreo estadístico para visualizar citas, atenciones,
-                pacientes activos, servicios, camas, diagnósticos, financiamiento y
-                producción diaria del Hospital Belén de Trujillo.
-            </p>
-
-            <a href="{{ route('login') }}" class="access-btn">
-                Acceder al sistema
-            </a>
-
-            <div class="features">
-                <div class="feature">
-                    <strong>Tiempo real local</strong>
-                    <span>Actualización operativa con Chart.js sin depender de servicios cloud.</span>
+            <section class="hero-card">
+                <div class="tag">
+                    <span class="dot"></span>
+                    Plataforma local de inteligencia hospitalaria
                 </div>
 
-                <div class="feature">
-                    <strong>Datos seguros</strong>
-                    <span>Consulta controlada mediante vistas SQL Server y acceso restringido.</span>
-                </div>
+                <h1>
+                    Consulta Externa - Emergencia - Hospitalización
+                </h1>
 
-                <div class="feature">
-                    <strong>Gestión hospitalaria</strong>
-                    <span>Indicadores para jefatura, estadística, emergencia y hospitalización.</span>
-                </div>
-            </div>
-        </section>
+                <p class="description">
+                    Sistema de monitoreo estadístico para visualizar citas, atenciones,
+                    pacientes activos, servicios, camas, diagnósticos, financiamiento y
+                    producción diaria del Hospital Belén de Trujillo.
+                </p>
 
-        <section class="summary-card">
-            <div class="summary-header">
-                <h2>Resumen Operativo</h2>
-                <span class="status">En línea</span>
-            </div>
+                <a href="{{ route('login') }}" class="access-btn">
+                    Acceder al sistema
+                </a>
 
-            <div class="kpis">
-                <div class="kpi primary">
-                    <h3>120</h3>
-                    <p>Citas programadas</p>
-                </div>
-
-                <div class="kpi">
-                    <h3>85</h3>
-                    <p>Atenciones realizadas</p>
-                </div>
-
-                <div class="kpi">
-                    <h3>35</h3>
-                    <p>Pendientes</p>
-                </div>
-
-                <div class="kpi primary">
-                    <h3>71%</h3>
-                    <p>Avance diario</p>
-                </div>
-            </div>
-
-            <div class="progress-box">
-                <div class="progress-row">
-                    <div class="progress-title">
-                        <span>Medicina Interna</span>
-                        <span>82%</span>
+                <div class="features">
+                    <div class="feature">
+                        <strong>Tiempo real local</strong>
+                        <span>Actualización operativa con Chart.js sin depender de servicios cloud.</span>
                     </div>
-                    <div class="bar">
-                        <span style="width: 82%"></span>
+
+                    <div class="feature">
+                        <strong>Datos seguros</strong>
+                        <span>Consulta controlada mediante vistas SQL Server y acceso restringido.</span>
+                    </div>
+
+                    <div class="feature">
+                        <strong>Gestión hospitalaria</strong>
+                        <span>Indicadores para jefatura, estadística, emergencia y hospitalización.</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="summary-card" aria-labelledby="modules-title">
+                <div class="summary-header">
+                    <h2 id="modules-title">Plataforma hospitalaria</h2>
+                    <span class="status">Acceso institucional</span>
+                </div>
+
+                <p class="description" style="margin-top: 0;">
+                    Una plataforma para consultar información operativa y gestionar
+                    los procesos autorizados del Hospital Belén de Trujillo.
+                </p>
+
+                <div class="module-list">
+                    <div class="module-item">
+                        <strong>Consulta Externa</strong>
+                        <span>Citas, atenciones y seguimiento de la producción.</span>
+                    </div>
+
+                    <div class="module-item">
+                        <strong>Emergencia y Hospitalización</strong>
+                        <span>Pacientes activos, servicios y gestión de camas.</span>
+                    </div>
+
+                    <div class="module-item">
+                        <strong>Servicios hospitalarios</strong>
+                        <span>Radiología, procedimientos y sala de operaciones.</span>
+                    </div>
+
+                    <div class="module-item">
+                        <strong>Gestión administrativa</strong>
+                        <span>Seguros e inventario de Informática, según los permisos asignados.</span>
                     </div>
                 </div>
 
-                <div class="progress-row">
-                    <div class="progress-title">
-                        <span>Pediatría</span>
-                        <span>68%</span>
-                    </div>
-                    <div class="bar">
-                        <span style="width: 68%"></span>
-                    </div>
-                </div>
+                <p class="module-note">
+                    Al iniciar sesión encontrarás tus módulos disponibles.
+                </p>
+            </section>
 
-                <div class="progress-row" style="margin-bottom:0;">
-                    <div class="progress-title">
-                        <span>Ginecología</span>
-                        <span>74%</span>
-                    </div>
-                    <div class="bar">
-                        <span style="width: 74%"></span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </div>
-</main>
+        </div>
+    </main>
 
 </body>
+
 </html>

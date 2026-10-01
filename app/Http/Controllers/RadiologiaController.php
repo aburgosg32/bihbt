@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Exports\RadiologiaReporteExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RadiologiaController extends Controller
 {
@@ -410,5 +412,120 @@ class RadiologiaController extends Controller
             'topEstudios',
             'citasHoy'
         ));
+    }
+    public function reportes(Request $request)
+    {
+        $fechaInicio = $request->fecha_inicio ?? now()->format('Y-m-d');
+        $fechaFin = $request->fecha_fin ?? now()->format('Y-m-d');
+
+        $modalidad = $request->modalidad;
+        $estado = $request->estado;
+        $buscar = $request->buscar;
+
+        $query = RadiologiaCita::query()
+            ->whereBetween('fecha_cita', [$fechaInicio, $fechaFin]);
+
+        if ($modalidad) {
+            $query->where('modalidad', $modalidad);
+        }
+
+        if ($estado) {
+            $query->where('estado', $estado);
+        }
+
+        if ($buscar) {
+            $query->where(function ($q) use ($buscar) {
+                $q->where('id_cuenta_atencion', 'like', "%{$buscar}%")
+                    ->orWhere('nro_historia_clinica', 'like', "%{$buscar}%")
+                    ->orWhere('paciente', 'like', "%{$buscar}%")
+                    ->orWhere('estudio', 'like', "%{$buscar}%")
+                    ->orWhere('codigo_estudio', 'like', "%{$buscar}%")
+                    ->orWhere('fuente_financiamiento', 'like', "%{$buscar}%")
+                    ->orWhere('tipo_servicio', 'like', "%{$buscar}%")
+                    ->orWhere('nombre_servicio', 'like', "%{$buscar}%");
+            });
+        }
+
+        $total = (clone $query)->count();
+        $atendidos = (clone $query)->where('estado', 'ATENDIDO')->count();
+        $registrados = (clone $query)->where('estado', 'REGISTRADO')->count();
+
+        $citas = $query
+            ->orderBy('fecha_cita', 'desc')
+            ->orderBy('hora_cita', 'desc')
+            ->paginate(20)
+            ->appends($request->query());
+
+        return view('radiologia.reportes', compact(
+            'fechaInicio',
+            'fechaFin',
+            'modalidad',
+            'estado',
+            'buscar',
+            'total',
+            'atendidos',
+            'registrados',
+            'citas'
+        ));
+    }
+    public function reportesExcel(Request $request)
+    {
+        $filtros = [
+            'fecha_inicio' => $request->fecha_inicio ?? now()->format('Y-m-d'),
+            'fecha_fin' => $request->fecha_fin ?? now()->format('Y-m-d'),
+            'modalidad' => $request->modalidad,
+            'estado' => $request->estado,
+            'buscar' => $request->buscar,
+        ];
+
+        return Excel::download(
+            new RadiologiaReporteExport($filtros),
+            'reporte_radiologia.xlsx'
+        );
+    }
+
+    public function reportesPdf(Request $request)
+    {
+        $fechaInicio = $request->fecha_inicio ?? now()->format('Y-m-d');
+        $fechaFin = $request->fecha_fin ?? now()->format('Y-m-d');
+
+        $query = RadiologiaCita::query()
+            ->whereBetween('fecha_cita', [$fechaInicio, $fechaFin]);
+
+        if ($request->modalidad) {
+            $query->where('modalidad', $request->modalidad);
+        }
+
+        if ($request->estado) {
+            $query->where('estado', $request->estado);
+        }
+
+        if ($request->buscar) {
+            $buscar = $request->buscar;
+
+            $query->where(function ($q) use ($buscar) {
+                $q->where('id_cuenta_atencion', 'like', "%{$buscar}%")
+                    ->orWhere('nro_historia_clinica', 'like', "%{$buscar}%")
+                    ->orWhere('paciente', 'like', "%{$buscar}%")
+                    ->orWhere('codigo_estudio', 'like', "%{$buscar}%")
+                    ->orWhere('estudio', 'like', "%{$buscar}%")
+                    ->orWhere('fuente_financiamiento', 'like', "%{$buscar}%")
+                    ->orWhere('tipo_servicio', 'like', "%{$buscar}%")
+                    ->orWhere('nombre_servicio', 'like', "%{$buscar}%");
+            });
+        }
+
+        $citas = $query
+            ->orderBy('fecha_cita', 'desc')
+            ->orderBy('hora_cita', 'desc')
+            ->get();
+
+        $pdf = Pdf::loadView('radiologia.exports.pdf', compact(
+            'citas',
+            'fechaInicio',
+            'fechaFin'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->stream('reporte_radiologia.pdf');
     }
 }

@@ -102,13 +102,13 @@ body {
     color: var(--hbt-primary) !important;
 }
 
-.nav-sidebar .nav-treeview > .nav-item > .nav-link {
+.nav-sidebar .nav-treeview>.nav-item>.nav-link {
     padding-left: 34px !important;
     color: var(--hbt-text) !important;
     background: transparent !important;
 }
 
-.nav-sidebar .nav-treeview > .nav-item > .nav-link.active {
+.nav-sidebar .nav-treeview>.nav-item>.nav-link.active {
     background: var(--hbt-sidebar-active) !important;
     color: var(--hbt-primary) !important;
 }
@@ -369,4 +369,160 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--hbt-primary);
+}
+
+/* =========================================================
+   SALA DE OPERACIONES - TARJETAS DE RESUMEN COMPACTAS
+   ========================================================= */
+
+.quirofano-resumen .small-box {
+    min-height: 72px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.quirofano-resumen .small-box .inner {
+    padding: 8px 12px;
+}
+
+.quirofano-resumen .small-box h3 {
+    margin: 0;
+    font-size: 25px;
+    line-height: 1.1;
+    font-weight: 700;
+}
+
+.quirofano-resumen .small-box p {
+    margin: 3px 0 0;
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 600;
+}
+
+.quirofano-resumen .small-box .icon {
+    top: 8px;
+    right: 12px;
+}
+
+.quirofano-resumen .small-box .icon>i {
+    top: 10px;
+    right: 12px;
+    font-size: 40px;
+}
+
+.quirofano-resumen .small-box:hover .icon>i {
+    font-size: 43px;
+}
+
+@media (max-width: 767.98px) {
+    .quirofano-resumen .small-box {
+        min-height: 65px;
+    }
+
+    .quirofano-resumen .small-box h3 {
+        font-size: 21px;
+    }
+
+    .quirofano-resumen .small-box p {
+        font-size: 12px;
+    }
+
+    .quirofano-resumen .small-box .icon>i {
+        font-size: 34px;
+    }
+}
+
+/* =========================================================
+   SALA DE OPERACIONES - ESTADO DE SALAS
+   ========================================================= */
+
+.sala-operacion-card {
+    min-height: 365px;
+    border-top-width: 4px;
+    transition: box-shadow 0.2s ease;
+}
+
+.sala-operacion-card:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+}
+
+.sala-operacion-card .card-header {
+    background: #ffffff;
+}
+
+.sala-operacion-card.sala-disponible {
+    border-top-color: #28a745;
+}
+
+.sala-operacion-card.sala-programada {
+    border-top-color: #007bff;
+}
+
+.sala-operacion-card.sala-preparacion {
+    border-top-color: #ffc107;
+}
+
+.sala-operacion-card.sala-en-uso {
+    border-top-color: #dc3545;
+}
+
+.sala-operacion-card.sala-limpieza {
+    border-top-color: #17a2b8;
+}
+
+.sala-operacion-card.sala-inoperativa {
+    border-top-color: #6c757d;
+    background-color: #f3f4f5;
+}
+
+.sala-operacion-card.sala-en-uso .card-header {
+    background-color: #fff3f3;
+}
+
+.sala-operacion-card.sala-preparacion .card-header {
+    background-color: #fffbea;
+}
+
+.sala-operacion-card.sala-limpieza .card-header {
+    background-color: #eefbfc;
+}
+
+.sala-paciente {
+    font-size: 13px;
+}
+
+.sala-paciente .font-weight-bold {
+    color: #253342;
+}
+
+.module-list {
+    display: grid;
+    gap: 12px;
+}
+
+.module-item {
+    padding: 17px 19px;
+    border: 1px solid var(--hbt-border, #D6E4F0);
+    border-radius: 15px;
+    background: #FBFDFF;
+}
+
+.module-item strong {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--hbt-dark, #0B4F8A);
+    font-size: 15px;
+}
+
+.module-item span {
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.module-note {
+    margin: 20px 0 0;
+    color: #64748b;
+    font-size: 13px;
 }

@@ -261,10 +261,10 @@ return [
     */
 
     'use_route_url' => false,
-    'dashboard_url' => 'emergencia/dashboard',
+    'dashboard_url' => 'dashboard',
     'logout_url' => 'logout',
     'login_url' => 'login',
-    'register_url' => 'register',
+    'register_url' => 'false',
     'password_reset_url' => 'password/reset',
     'password_email_url' => 'password/email',
     'profile_url' => false,
@@ -306,11 +306,12 @@ return [
         [
             'text' => 'CONSULTA EXTERNA',
             'icon' => 'fas fa-stethoscope',
+            'can' => 'ver-consulta',
             'submenu' => [
 
                 [
                     'text' => 'Dashboard',
-                    'url'  => 'dashboard',
+                    'url'  => 'consulta.dashboard',
                     'icon' => 'fas fa-chart-line',
                 ],
 
@@ -318,6 +319,11 @@ return [
                     'text' => 'Atenciones CE',
                     'url'  => 'consulta-externa/pacientes-consultorio',
                     'icon' => 'fas fa-user-injured',
+
+
+
+
+
                     'active' => ['consulta-externa/pacientes-consultorio'],
                 ],
 
@@ -327,6 +333,7 @@ return [
         [
             'text' => 'EMERGENCIA',
             'icon' => 'fas fa-ambulance',
+            'can' => 'ver-emergencia',
             'active' => ['emergencia/*'],
             'submenu' => [
 
@@ -356,6 +363,7 @@ return [
         [
             'text' => 'HOSPITALIZACIÓN',
             'icon' => 'fas fa-hospital-user',
+            'can' => 'ver-hospitalizacion',
             'submenu' => [
 
                 [
@@ -380,9 +388,10 @@ return [
 
             ],
         ],
-           [
+        [
             'text' => 'RADIOLOGIA',
             'icon' => 'fas fa-x-ray',
+            'can' => 'ver-radiologia',
             'submenu' => [
 
                 [
@@ -416,9 +425,264 @@ return [
                     'icon' => 'fas fa-wave-square',
                     'active' => ['radiologia/ecografias'],
                 ],
+                [
+                    'text' => 'Reportes',
+                    'url'  => 'radiologia/reportes',
+                    'icon' => 'fas fa-file-alt',
+                    'active' => ['radiologia/reportes'],
+                ],
 
             ],
         ],
+        [
+            'text' => 'GESTIÓN DE CAMAS',
+            'icon' => 'fas fa-bed',
+            'can' => 'ver-camas',
+            'active' => ['camas/*'],
+
+            'submenu' => [
+
+                [
+                    'text' => 'Censo de Camas',
+                    'url'  => 'camas/censo',
+                    'icon' => 'fas fa-clipboard-list',
+                    'active' => ['camas/censo*'],
+                ],
+
+                [
+                    'text' => 'Censo Actual',
+                    'url'  => 'camas/pacientes',
+                    'icon' => 'fas fa-list',
+                    'active' => ['camas/pacientes*'],
+                ],
+
+                [
+                    'text' => 'Configuración',
+                    'icon' => 'fas fa-cog',
+                    'active' => [
+                        'camas/departamentos*',
+                        'camas/servicios*',
+                        'camas/habitaciones*',
+                        'camas/camas*',
+                    ],
+
+                    'submenu' => [
+
+                        [
+                            'text' => 'Departamentos',
+                            'url'  => 'camas/departamentos',
+                            'icon' => 'fas fa-hospital',
+                            'active' => ['camas/departamentos*'],
+                        ],
+
+                        [
+                            'text' => 'Servicios',
+                            'url'  => 'camas/servicios',
+                            'icon' => 'fas fa-clinic-medical',
+                            'active' => ['camas/servicios*'],
+                        ],
+
+                        [
+                            'text' => 'Habitaciones',
+                            'url'  => 'camas/habitaciones',
+                            'icon' => 'fas fa-door-open',
+                            'active' => ['camas/habitaciones*'],
+                        ],
+
+                        [
+                            'text' => 'Camas',
+                            'url'  => 'camas/camas',
+                            'icon' => 'fas fa-bed',
+                            'active' => ['camas/camas*'],
+                        ],
+
+                    ],
+                ],
+
+            ],
+        ],
+        [
+            'text' => 'PROCEDIMIENTOS',
+            'icon' => 'fas fa-heartbeat',
+            'can' => 'ver-procedimientos',
+            'active' => ['procedimientos/*'],
+
+            'submenu' => [
+                [
+                    'text' => 'Programación',
+                    'url'  => 'procedimientos/programaciones',
+                    'icon' => 'fas fa-calendar-alt',
+                    'active' => [
+                        'procedimientos/programaciones*',
+                    ],
+                ],
+                [
+                    'text' => 'Citas',
+                    'route' => 'procedimientos.citas.index',
+                    'icon' => 'fas fa-calendar-check',
+                    'active' => [
+                        'procedimientos/citas*',
+                    ],
+                ],
+                [
+                    'text' => 'Reportes',
+                    'route' => 'procedimientos.reportes.index',
+                    'icon' => 'fas fa-file-alt',
+                    'active' => [
+                        'procedimientos/reportes*',
+                    ],
+                ],
+                [
+                    'text' => 'Configuración',
+                    'icon' => 'fas fa-cog',
+                    'active' => [
+                        'procedimientos/servicios*',
+                    ],
+
+                    'submenu' => [
+
+                        [
+                            'text' => 'Servicios',
+                            'url'  => 'procedimientos/servicios',
+                            'icon' => 'fas fa-clinic-medical',
+                            'active' => [
+                                'procedimientos/servicios*',
+                            ],
+                        ],
+                        [
+                            'text' => 'Procedimientos',
+                            'url'  => 'procedimientos/tipos',
+                            'icon' => 'fas fa-heartbeat',
+                            'active' => [
+                                'procedimientos/tipos*',
+                            ],
+                        ],
+                        [
+                            'text' => 'Médicos',
+                            'url'  => 'procedimientos/medicos',
+                            'icon' => 'fas fa-user-md',
+                            'active' => [
+                                'procedimientos/medicos*',
+                            ],
+                        ],
+
+                    ],
+                ],
+            ],
+        ],
+        [
+            'text' => 'SALA DE OPERACIONES',
+            'icon' => 'fas fa-procedures',
+            'can' => 'ver-quirofano',
+            'submenu' => [
+                [
+                    'text' => 'Nueva solicitud',
+                    'route' => 'quirofano.solicitudes.create',
+                    'icon' => 'fas fa-file-medical',
+                    'active' => [
+                        'quirofano/solicitudes/nueva',
+                    ],
+                ],
+                [
+                    'text' => 'Solicitudes quirúrgicas',
+                    'route' => 'quirofano.solicitudes.index',
+                    'icon' => 'fas fa-clipboard-list',
+                    'active' => [
+                        'quirofano/solicitudes?*',
+                    ],
+                ],
+                [
+                    'text' => 'Planificación',
+                    'route' => 'quirofano.programacion.index',
+                    'icon' => 'fas fa-calendar-alt',
+                    'active' => [
+                        'quirofano/programacion*',
+                    ],
+                ],
+                [
+                    'text' => 'Estado de salas',
+                    'route' => 'quirofano.estado-salas.index',
+                    'icon' => 'fas fa-door-open',
+                    'active' => [
+                        'quirofano/estado-salas*',
+                    ],
+                ],
+                [
+                    'text' => 'Panel TV',
+                    'route' => 'quirofano.panel-tv',
+                    'icon' => 'fas fa-tv',
+                    'target' => '_blank',
+                    'active' => [
+                        'quirofano/panel-tv',
+                    ],
+                ],
+                [
+                    'text' => 'Reportes',
+                    'route' => 'quirofano.reportes.index',
+                    'icon' => 'fas fa-fw fa-chart-bar',
+                ],
+                [
+                    'text' => 'Configuración',
+                    'icon' => 'fas fa-cogs',
+                    'submenu' => [
+                        [
+                            'text' => 'Salas',
+                            'route' => 'quirofano.salas.index',
+                            'icon' => 'fas fa-door-open',
+                            'active' => [
+                                'quirofano/configuracion/salas*',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+        [
+            'text' => 'SEGUROS',
+            'icon' => 'fas fa-file-medical',
+            'can' => 'ver-seguros',
+            'submenu' => [
+                [
+                    'text' => 'Disponibilidad',
+                    'route' => 'seguros.disponibilidad',
+                    'icon' => 'fas fa-calendar-check',
+                ],
+                [
+                    'text' => 'Seguimiento',
+                    'route' => 'seguros.seguimiento',
+                    'icon' => 'fas fa-history',
+                    'active' => ['seguros/seguimiento*'],
+                ],
+                [
+                    'text' => 'Impresión FUA',
+                    'route' => 'seguros.impresion-fua.index',
+                    'icon' => 'fas fa-print',
+                ],
+                [
+                    'text' => 'Reprogramaciones',
+                    'route' => 'seguros.reprogramaciones.index',
+                    'icon' => 'fas fa-calendar-alt',
+                ],
+                [
+                    'text' => 'Código de prestación',
+                    'route' => 'seguros.codigo-prestacion.index',
+                    'icon' => 'fas fa-file-medical',
+                ],
+            ],
+        ],
+        [
+            'text' => 'SEGURIDAD',
+            'icon' => 'fas fa-user-shield',
+            'can' => 'administrar-seguridad',
+            'submenu' => [
+                [
+                    'text' => 'Usuarios y permisos',
+                    'route' => 'seguridad.usuarios.index',
+                    'icon' => 'fas fa-users-cog',
+                ],
+            ],
+        ],
+
     ],
     /*
     |--------------------------------------------------------------------------
@@ -501,7 +765,7 @@ return [
             ],
         ],
         'Sweetalert2' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 [
                     'type' => 'js',

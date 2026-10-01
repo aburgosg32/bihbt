@@ -127,6 +127,17 @@ return [
             'encrypt' => env('DB_ENCRYPT', 'no'),
             'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'true'),
         ],
+        'sigh_produccion' => [
+            'driver' => 'sqlsrv',
+            'host' => env('SIGH_PROD_HOST'),
+            'port' => env('SIGH_PROD_PORT', '1433'),
+            'database' => env('SIGH_PROD_DATABASE'),
+            'username' => env('SIGH_PROD_USERNAME'),
+            'password' => env('SIGH_PROD_PASSWORD'),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+        ],
 
     ],
 

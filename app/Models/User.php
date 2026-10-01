@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -13,11 +13,6 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'dni',
         'name',
@@ -28,26 +23,63 @@ class User extends Authenticatable
         'cambiar_password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'activo' => 'boolean',
+            'cambiar_password' => 'boolean',
         ];
+    }
+
+    public function permisosModulos(): HasMany
+    {
+        return $this->hasMany(UsuarioModuloPermiso::class, 'user_id');
+    }
+
+    public function esAdministrador(): bool
+    {
+        return $this->rol === 'administrador';
+    }
+
+    public function puedeVerModulo(string $modulo): bool
+    {
+        if (! $this->activo) {
+            return false;
+        }
+
+        if ($this->esAdministrador()) {
+            return true;
+        }
+
+        return $this->permisosModulos()
+            ->where('modulo', $modulo)
+            ->where(function ($query) {
+                $query->where('ver', true)
+                    ->orWhere('gestionar', true);
+            })
+            ->exists();
+    }
+
+    public function puedeGestionarModulo(string $modulo): bool
+    {
+        if (! $this->activo) {
+            return false;
+        }
+
+        if ($this->esAdministrador()) {
+            return true;
+        }
+
+        return $this->permisosModulos()
+            ->where('modulo', $modulo)
+            ->where('gestionar', true)
+            ->exists();
     }
 }
