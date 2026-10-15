@@ -232,11 +232,9 @@ class ProcedimientoCitaController extends Controller
                 ], 422);
             }
 
-            $paciente = DB::connection('sigh')
-                ->table('vw_radiologia_cuenta_atencion')
-                ->where('IdCuentaAtencion', $cuenta)
-                ->orderBy('FechaIngreso', 'desc')
-                ->first();
+            $paciente = $this->buscarPacienteSighPorCuenta(
+                $cuenta
+            );
 
             if (!$paciente) {
                 return response()->json([
@@ -352,14 +350,9 @@ class ProcedimientoCitaController extends Controller
      * Los datos se vuelven a consultar en SIGH.
      * No confiamos en datos ocultos enviados desde el navegador.
      */
-        $paciente = DB::connection('sigh')
-            ->table('vw_radiologia_cuenta_atencion')
-            ->where(
-                'IdCuentaAtencion',
-                $datos['numero_cuenta']
-            )
-            ->orderByDesc('FechaIngreso')
-            ->first();
+        $paciente = $this->buscarPacienteSighPorCuenta(
+            $datos['numero_cuenta']
+        );
 
         if (!$paciente) {
             throw ValidationException::withMessages([
@@ -535,9 +528,18 @@ class ProcedimientoCitaController extends Controller
         /*
      * Papel térmico de 80 mm.
      * 226.77 puntos = 80 mm.
-     */
+     
         $pdf->setPaper(
             [0, 0, 226.77, 425.20],
+            'portrait'
+        );*/
+
+        /*
+ * Ticket térmico:
+ * 80 mm de ancho por 100 mm de alto.
+ */
+        $pdf->setPaper(
+            [0, 0, 226.77, 283.46],
             'portrait'
         );
 
@@ -657,5 +659,66 @@ class ProcedimientoCitaController extends Controller
                 $cita
             ),
         ]);
+    }
+
+    /**
+     * Consulta directamente las tablas de SIGHO sin depender de una vista.
+     */
+    private function buscarPacienteSighPorCuenta(
+        string $cuenta
+    ): ?object {
+        return DB::connection('sigh')
+            ->table('Atenciones as A')
+            ->leftJoin('Pacientes as P', 'A.IdPaciente', '=', 'P.IdPaciente')
+            ->leftJoin('Servicios as S', 'A.IdServicioIngreso', '=', 'S.IdServicio')
+            ->leftJoin(
+                'FuentesFinanciamiento as FF',
+                'FF.IdFuenteFinanciamiento',
+                '=',
+                'A.IdFuenteFinanciamiento'
+            )
+            ->leftJoin('TiposEdad as TE', 'TE.IdTipoEdad', '=', 'A.IdTipoEdad')
+            ->leftJoin(
+                'TiposServicio as TS',
+                'A.IdTipoServicio',
+                '=',
+                'TS.IdTipoServicio'
+            )
+            ->leftJoin('TiposSexo as Se', 'P.IdTipoSexo', '=', 'Se.IdTipoSexo')
+            ->select([
+                'A.IdCuentaAtencion',
+                'A.IdPaciente',
+                'P.NroDocumento',
+                DB::raw('UPPER(Se.Descripcion) AS Sexo'),
+                DB::raw("
+    UPPER(
+        LTRIM(
+            RTRIM(
+                ISNULL(P.ApellidoPaterno, '') + ' ' +
+                ISNULL(P.ApellidoMaterno, '') + ' ' +
+                ISNULL(P.PrimerNombre, '') + ' ' +
+                ISNULL(P.SegundoNombre, '')
+            )
+        )
+    ) AS Paciente
+"),
+                DB::raw('P.Telefono AS TelPaciente'),
+                'P.NroHistoriaClinica',
+                DB::raw(
+                    'CONVERT(date, P.FechaNacimiento) AS FechaNacimiento'
+                ),
+                'A.Edad',
+                DB::raw(
+                    'CONVERT(date, A.FechaIngreso) AS FechaIngreso'
+                ),
+                'A.HoraIngreso',
+                DB::raw('UPPER(TS.Descripcion) AS TipoServicio'),
+                DB::raw('S.Nombre AS NombreServicio'),
+                DB::raw('UPPER(TE.Descripcion) AS TipoEdad'),
+                DB::raw('FF.Descripcion AS FF'),
+            ])
+            ->where('A.IdCuentaAtencion', trim($cuenta))
+            ->orderByDesc('A.FechaIngreso')
+            ->first();
     }
 }

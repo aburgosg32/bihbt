@@ -62,6 +62,7 @@ class SegurosDisponibilidadController extends Controller
             40,
             72,
             111,
+            521,
         ];
 
         $request->validate([

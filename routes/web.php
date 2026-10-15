@@ -31,6 +31,11 @@ use App\Http\Controllers\Seguridad\UsuarioController;
 use App\Http\Controllers\SegurosReprogramacionesController;
 use App\Http\Controllers\SegurosCodigoPrestacionController;
 use App\Http\Controllers\SegurosSeguimientoController;
+use App\Http\Controllers\SegurosCuposController;
+use App\Http\Controllers\SegurosPacientesController;
+use App\Http\Controllers\AuditoriaController;
+use App\Http\Controllers\SegurosPanelTvController;
+use App\Http\Controllers\SegurosConsultoriosController;
 /*
 |--------------------------------------------------------------------------
 | Página de inicio
@@ -437,6 +442,40 @@ Route::middleware(['auth'])
             [SegurosSeguimientoController::class, 'detalle']
         )->whereNumber('cuenta')
             ->name('seguimiento.detalle');
+        Route::get('/cupos', [SegurosCuposController::class, 'index'])
+            ->name('cupos.index');
+
+        Route::post('/cupos', [SegurosCuposController::class, 'actualizar'])
+            ->name('cupos.actualizar');
+        Route::get('/pacientes', [SegurosPacientesController::class, 'index'])
+            ->name('pacientes.index');
+
+        Route::get('/pacientes/{paciente}/editar', [
+            SegurosPacientesController::class,
+            'edit',
+        ])->whereNumber('paciente')
+            ->name('pacientes.edit');
+
+        Route::put('/pacientes/{paciente}', [
+            SegurosPacientesController::class,
+            'update',
+        ])->whereNumber('paciente')
+            ->name('pacientes.update');
+
+        Route::get('/panel-tv', [SegurosPanelTvController::class, 'index'])
+            ->name('panel-tv.index');
+
+        Route::get('/panel-tv/datos', [SegurosPanelTvController::class, 'datos'])
+            ->name('panel-tv.datos');
+        Route::get('/asignar-consultorios', [
+            SegurosConsultoriosController::class,
+            'index',
+        ])->name('consultorios.index');
+
+        Route::post('/asignar-consultorios', [
+            SegurosConsultoriosController::class,
+            'store',
+        ])->name('consultorios.store');
     });
 
 /*
@@ -585,7 +624,21 @@ Route::middleware(['auth', 'verified', 'can:administrar-seguridad'])
         Route::put('/usuarios/{usuario}', [UsuarioController::class, 'update'])
             ->name('usuarios.update');
     });
+/*
+|--------------------------------------------------------------------------
+| Reportes y Auditoria
+|--------------------------------------------------------------------------
+*/
 
+Route::prefix('reportes-auditoria')
+    ->name('auditoria.')
+    ->group(function () {
+        Route::get('/', [AuditoriaController::class, 'index'])
+            ->name('index');
+
+        Route::get('/exportar', [AuditoriaController::class, 'exportar'])
+            ->name('exportar');
+    });
 
 
 require __DIR__ . '/auth.php';

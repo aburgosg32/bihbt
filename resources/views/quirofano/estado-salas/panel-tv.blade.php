@@ -31,6 +31,7 @@
         rel="stylesheet"
 
         href="{{ asset('plugins/fontawesome-free/css/all.min.css') }}">
+        <link rel="icon" type="image/jpeg" href="{{ asset('img/logo_hbt2.jpg') }}?v=2">
 
 
 

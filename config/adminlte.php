@@ -30,7 +30,7 @@ return [
     |
     */
 
-    'use_ico_only' => true,
+    'use_ico_only' => false,
     'use_full_favicon' => true,
 
     /*
@@ -654,6 +654,18 @@ return [
                     'active' => ['seguros/seguimiento*'],
                 ],
                 [
+                    'text' => 'Pacientes',
+                    'route' => 'seguros.pacientes.index',
+                    'icon' => 'fas fa-user-edit',
+                    'active' => ['seguros/pacientes*'],
+                ],
+                [
+                    'text' => 'Gestión de cupos',
+                    'route' => 'seguros.cupos.index',
+                    'icon' => 'fas fa-calendar-plus',
+                    'active' => ['seguros/cupos*'],
+                ],
+                [
                     'text' => 'Impresión FUA',
                     'route' => 'seguros.impresion-fua.index',
                     'icon' => 'fas fa-print',
@@ -667,6 +679,29 @@ return [
                     'text' => 'Código de prestación',
                     'route' => 'seguros.codigo-prestacion.index',
                     'icon' => 'fas fa-file-medical',
+                ],
+                [
+                    'text' => 'Panel Consultorios',
+                    'route' => 'seguros.panel-tv.index',
+                    'icon' => 'fas fa-tv',
+                    'active' => ['seguros/panel-tv*'],
+                ],
+                [
+                    'text' => 'Asignar consultorios',
+                    'route' => 'seguros.consultorios.index',
+                    'icon' => 'fas fa-door-open',
+                    'active' => ['seguros/asignar-consultorios*'],
+                ],
+            ],
+        ],
+        [
+            'text' => 'Reportes y Auditoría',
+            'icon' => 'fas fa-fw fa-history',
+            'submenu' => [
+                [
+                    'text' => 'Movimientos SIGH',
+                    'route' => 'auditoria.index',
+                    'icon' => 'fas fa-fw fa-list',
                 ],
             ],
         ],

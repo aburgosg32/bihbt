@@ -1,5 +1,7 @@
 @extends('adminlte::page')
 
+@section('plugins.Select2', true)
+
 @section('title', 'Disponibilidad de citas | Seguros')
 
 @section('content_header')
@@ -24,13 +26,12 @@
                         <div class="form-group">
                             <label for="especialidad">Especialidad</label>
 
-                            <select name="especialidad"
+                            <select
+                                name="especialidad"
                                 id="especialidad"
                                 class="form-control"
                                 required>
-                                <option value="">
-                                    Seleccione una especialidad
-                                </option>
+                                <option value=""></option>
 
                                 @foreach ($especialidades as $especialidad)
                                 <option
@@ -178,6 +179,7 @@
 
 @section('css')
 <link rel="stylesheet" href="{{ asset('css/hbt.css') }}">
+<link rel="icon" type="image/jpeg" href="{{ asset('img/logo_hbt2.jpg') }}?v=2">
 
 <style>
     .seguros-disponibilidad .consultorios-sin-disponibilidad {
@@ -200,5 +202,50 @@
         vertical-align: middle;
         font-size: 0.9rem;
     }
+
+    .seguros-disponibilidad .select2-container .select2-selection--single {
+        height: calc(2.25rem + 2px);
+        border: 1px solid #ced4da;
+        border-radius: .25rem;
+    }
+
+    .seguros-disponibilidad .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 2.25rem;
+        padding-left: .75rem;
+        padding-right: 2.5rem;
+    }
+
+    .seguros-disponibilidad .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 2.25rem;
+    }
+
+    .seguros-disponibilidad .select2-container--default .select2-selection--single .select2-selection__placeholder {
+        color: #6c757d;
+    }
+
+    /* Lista de especialidades más alta */
+    .especialidades-dropdown .select2-results>.select2-results__options {
+        max-height: 420px !important;
+        max-height: min(420px, 60vh) !important;
+        overflow-y: auto;
+    }
 </style>
+@stop
+@section('js')
+<script>
+    $(function() {
+        $('#especialidad').select2({
+            width: '100%',
+            placeholder: 'Seleccione una especialidad',
+            allowClear: true,
+            minimumResultsForSearch: 0,
+            dropdownCssClass: 'especialidades-dropdown',
+            language: {
+                noResults: function() {
+                    return 'No se encontraron especialidades';
+                }
+            }
+        });
+    });
+</script>
 @stop

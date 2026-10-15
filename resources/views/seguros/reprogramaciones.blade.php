@@ -297,7 +297,7 @@
 
 @section('css')
 <link rel="stylesheet" href="{{ asset('css/hbt.css') }}">
-
+<link rel="icon" type="image/jpeg" href="{{ asset('img/logo_hbt2.jpg') }}?v=2">
 <style>
     .seguros-reprogramaciones .card {
         border-radius: .45rem;

@@ -24,7 +24,7 @@ class SegurosReprogramacionesController extends Controller
         $citas = collect();
 
         if ($cuenta !== null) {
-            $citas = DB::connection('sigh')
+            $citas = DB::connection('sigh_produccion')
                 ->table('Atenciones as a')
                 ->join('Citas as c', 'c.IdAtencion', '=', 'a.IdAtencion')
                 ->leftJoin('Pacientes as pac', 'pac.IdPaciente', '=', 'a.IdPaciente')
@@ -73,9 +73,7 @@ class SegurosReprogramacionesController extends Controller
                     ], fn($parte) => trim((string) $parte) !== '')));
 
                     $cita->fecha_mostrar = Carbon::parse($cita->Fecha)->format('d/m/Y');
-                    $cita->reprogramable =
-                        in_array((int) $cita->IdEstadoCita, [1, 4], true)
-                        && $this->sinEgreso($cita->HoraEgreso);
+                    $cita->reprogramable = true;
 
                     return $cita;
                 });
@@ -100,7 +98,7 @@ class SegurosReprogramacionesController extends Controller
         $inicio = $fecha->format('Ymd');
         $fin = $fecha->copy()->addDay()->format('Ymd');
 
-        $programaciones = DB::connection('sigh')
+        $programaciones = DB::connection('sigh_produccion')
             ->table('ProgramacionMedica as p')
             ->join('Servicios as s', 's.IdServicio', '=', 'p.IdServicio')
             ->join('Medicos as m', 'm.IdMedico', '=', 'p.IdMedico')
@@ -155,22 +153,18 @@ class SegurosReprogramacionesController extends Controller
             'cuenta' => ['required', 'integer', 'min:1'],
         ]);
 
-        $sigh = DB::connection('sigh');
+        $sigh = DB::connection('sigh_produccion');
 
         $cita = $sigh->table('Citas as c')
             ->join('Atenciones as a', 'a.IdAtencion', '=', 'c.IdAtencion')
             ->where('c.IdCita', $datos['id_cita'])
             ->where('a.IdCuentaAtencion', $datos['cuenta'])
-            ->whereIn('c.IdEstadoCita', [1, 4])
-            ->where(function ($query) {
-                $query->whereNull('a.HoraEgreso')
-                    ->orWhere('a.HoraEgreso', '')
-                    ->orWhere('a.HoraEgreso', '__:__');
-            })
             ->exists();
 
         if (! $cita) {
-            return response()->json(['message' => 'La cita no puede reprogramarse.'], 422);
+            return response()->json([
+                'message' => 'La cita no existe o no pertenece a la cuenta indicada.',
+            ], 422);
         }
 
         $programacion = $this->buscarProgramacion($sigh, (int) $datos['programacion']);
@@ -193,7 +187,7 @@ class SegurosReprogramacionesController extends Controller
             'hora_inicio' => ['required', 'regex:/^\d{2}:\d{2}$/'],
         ]);
 
-        $sigh = DB::connection('sigh');
+        $sigh = DB::connection('sigh_produccion');
 
         // Bloqueamos la programación y volvemos a comprobar el cupo antes de escribir.
         $sigh->transaction(function () use ($sigh, $datos) {
@@ -214,9 +208,9 @@ class SegurosReprogramacionesController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if (! $atencion || ! $this->sinEgreso($atencion->HoraEgreso)) {
+            if (! $atencion) {
                 throw ValidationException::withMessages([
-                    'cuenta' => 'La cuenta no existe o el paciente ya fue atendido.',
+                    'cuenta' => 'La cuenta indicada no existe.',
                 ]);
             }
 
@@ -226,9 +220,9 @@ class SegurosReprogramacionesController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if (! $cita || ! in_array((int) $cita->IdEstadoCita, [1, 4], true)) {
+            if (! $cita) {
                 throw ValidationException::withMessages([
-                    'id_cita' => 'La cita ya no puede reprogramarse.',
+                    'id_cita' => 'La cita no existe o no pertenece a la atención indicada.',
                 ]);
             }
 
@@ -322,8 +316,8 @@ class SegurosReprogramacionesController extends Controller
             return [];
         }
 
-        $fecha = Carbon::parse($programacion->Fecha, self::ZONA)->format('Y-m-d');
-        $ahora = Carbon::now(self::ZONA);
+        /*$fecha = Carbon::parse($programacion->Fecha, self::ZONA)->format('Y-m-d');
+        $ahora = Carbon::now(self::ZONA);*/
 
         $ocupadas = $sigh->table('Citas')
             ->where('IdProgramacion', $programacion->IdProgramacion)
@@ -336,11 +330,11 @@ class SegurosReprogramacionesController extends Controller
 
         for ($minuto = $inicio; $minuto + $duracion <= $fin; $minuto += $duracion) {
             $inicioCupo = sprintf('%02d:%02d', intdiv($minuto, 60), $minuto % 60);
-            $instante = Carbon::parse($fecha . ' ' . $inicioCupo, self::ZONA);
+            /*$instante = Carbon::parse($fecha . ' ' . $inicioCupo, self::ZONA);
 
             if ($instante->lte($ahora)) {
                 continue;
-            }
+            }*/
 
             $finCupo = $minuto + $duracion;
 

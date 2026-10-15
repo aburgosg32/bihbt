@@ -1,9 +1,12 @@
 @extends('adminlte::page')
 
+@section('plugins.Sweetalert2', true)
+
 @section('title', 'Citas de procedimientos')
 
 @section('css')
 <link rel="stylesheet" href="{{ asset('css/hbt.css') }}">
+<link rel="icon" type="image/jpeg" href="{{ asset('img/logo_hbt2.jpg') }}?v=2">
 
 <style>
     .tabla-cupos tbody tr {
@@ -930,32 +933,51 @@
                     .then(function(resultado) {
                         $('#modalReprogramar').modal('hide');
 
-                        /*
-                         * Actualiza el día que se estaba consultando.
-                         * El cupo anterior volverá a aparecer disponible.
-                         */
                         cargarCupos();
 
-                        alert(resultado.message);
+                        setTimeout(function() {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Cita reprogramada',
+                                text: resultado.message ||
+                                    'La cita fue reprogramada correctamente.',
+                                showCancelButton: true,
+                                confirmButtonText: '<i class="fas fa-print mr-1"></i> Imprimir nuevo ticket',
+                                cancelButtonText: 'Cerrar',
+                                confirmButtonColor: '#007bff',
+                                cancelButtonColor: '#6c757d',
+                                allowOutsideClick: false,
+                                reverseButtons: true
+                            }).then(function(respuesta) {
+                                const confirmado =
+                                    respuesta.isConfirmed === true ||
+                                    respuesta.value === true;
 
-                        if (
-                            resultado.ticket_url &&
-                            confirm(
-                                '¿Desea imprimir el nuevo ticket?'
-                            )
-                        ) {
-                            window.open(
-                                resultado.ticket_url,
-                                '_blank'
-                            );
-                        }
+                                if (confirmado && resultado.ticket_url) {
+                                    const ventanaTicket = window.open(
+                                        resultado.ticket_url,
+                                        '_blank'
+                                    );
+
+                                    if (!ventanaTicket) {
+                                        Swal.fire({
+                                            icon: 'warning',
+                                            title: 'Ventana bloqueada',
+                                            text: 'El navegador bloqueó la apertura del ticket. Permita las ventanas emergentes para este sistema.',
+                                            confirmButtonText: 'Aceptar',
+                                            confirmButtonColor: '#007bff'
+                                        });
+                                    }
+                                }
+                            });
+                        }, 300);
                     })
                     .catch(function(error) {
                         mensajeReprogramacion.innerHTML = `
-                    <div class="alert alert-danger py-2">
-                        ${escapar(error.message)}
-                    </div>
-                `;
+        <div class="alert alert-danger py-2">
+            ${escapar(error.message)}
+        </div>
+    `;
 
                         btnConfirmarReprogramacion.disabled = false;
                     })
@@ -1142,7 +1164,15 @@
                         }
 
                         setTimeout(function() {
-                            alert(resultado.message);
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Cita registrada',
+                                text: resultado.message ||
+                                    'La cita fue registrada correctamente.',
+                                confirmButtonText: 'Aceptar',
+                                confirmButtonColor: '#007bff',
+                                allowOutsideClick: false
+                            });
                         }, 300);
                     })
                     .catch(function(error) {

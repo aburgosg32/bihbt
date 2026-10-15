@@ -21,27 +21,22 @@
         </div>
 
         <div class="card-body">
-            <form
-                action="{{ route('seguros.seguimiento') }}"
-                method="GET">
-                <div class="row align-items-end">
-                    <div class="col-md-4 col-lg-3">
-                        <div class="form-group mb-md-0">
-                            <label for="dni">DNI del paciente</label>
+            <form method="GET" action="{{ route('seguros.seguimiento') }}">
+                <div class="row">
+                    <div class="col-12 col-md-4">
+                        <div class="form-group">
+                            <label for="dni">DNI</label>
 
                             <input
                                 type="text"
-                                id="dni"
                                 name="dni"
-                                value="{{ old('dni', $dni) }}"
+                                id="dni"
                                 class="form-control @error('dni') is-invalid @enderror"
-                                placeholder="Ingrese 8 dígitos"
-                                maxlength="8"
-                                minlength="8"
-                                pattern="[0-9]{8}"
+                                value="{{ old('dni', $dni) }}"
+                                placeholder="Ingrese el DNI"
                                 inputmode="numeric"
-                                autocomplete="off"
-                                required>
+                                maxlength="8"
+                                pattern="[0-9]{8}">
 
                             @error('dni')
                             <div class="invalid-feedback">
@@ -51,20 +46,51 @@
                         </div>
                     </div>
 
-                    <div class="col-md-8 col-lg-9">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search mr-1"></i>
-                            Buscar
-                        </button>
+                    <div class="col-12 col-md-4">
+                        <div class="form-group">
+                            <label for="historia">Historia clínica</label>
 
-                        <a
-                            href="{{ route('seguros.seguimiento') }}"
-                            class="btn btn-outline-secondary ml-1">
-                            <i class="fas fa-eraser mr-1"></i>
-                            Limpiar
-                        </a>
+                            <input
+                                type="text"
+                                name="historia"
+                                id="historia"
+                                class="form-control @error('historia') is-invalid @enderror"
+                                value="{{ old('historia', $historia) }}"
+                                placeholder="Ingrese la historia clínica"
+                                inputmode="numeric"
+                                maxlength="10"
+                                pattern="[0-9]+">
+
+                            @error('historia')
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <div class="form-group">
+                            <label class="d-none d-md-block">&nbsp;</label>
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search mr-1"></i>
+                                Buscar
+                            </button>
+
+                            <a
+                                href="{{ route('seguros.seguimiento') }}"
+                                class="btn btn-outline-secondary">
+                                Limpiar
+                            </a>
+                        </div>
                     </div>
                 </div>
+
+                <small class="text-muted">
+                    Busque por DNI o historia clínica.
+                    Si completa ambos campos, se aplicarán ambos filtros.
+                </small>
             </form>
         </div>
     </div>
@@ -193,6 +219,7 @@
 
 </div>
 <div
+
     class="modal fade"
     id="modalDetalleAtencion"
     tabindex="-1"
@@ -316,6 +343,7 @@
                                     <thead>
                                         <tr>
                                             <th>Orden</th>
+                                            <th>FechaHora</th>
                                             <th>Código</th>
                                             <th>Servicio</th>
                                         </tr>
@@ -334,11 +362,10 @@
                                 <table class="table table-striped table-sm detalle-tabla">
                                     <thead>
                                         <tr>
+                                            <th>Fecha y hora</th>
                                             <th>Código</th>
                                             <th>Medicamento / bien</th>
                                             <th>Movimiento</th>
-                                            <th>Tipo</th>
-                                            <th>Estado del movimiento</th>
                                         </tr>
                                     </thead>
                                     <tbody id="detalleFarmacia"></tbody>
@@ -365,7 +392,7 @@
 
 @section('css')
 <link rel="stylesheet" href="{{ asset('css/hbt.css') }}">
-
+<link rel="icon" type="image/jpeg" href="{{ asset('img/logo_hbt2.jpg') }}?v=2">
 <style>
     .seguros-seguimiento .table thead th {
         background-color: #eaf2fb;
@@ -529,14 +556,19 @@
                 escribirTabla(
                     'detalleServicios',
                     datos.servicios,
-                    ['IdOrden', 'Codigo', 'Servicio'],
+                    ['IdOrden', 'FechaServicio', 'Codigo', 'Servicio'],
                     'No hay servicios despachados registrados.'
                 );
 
                 escribirTabla(
                     'detalleFarmacia',
                     datos.farmacia,
-                    ['Codigo', 'Nombre', 'MovNumero', 'MovTipo', 'EstadoMovimiento'],
+                    [
+                        'FechaFarmacia',
+                        'Codigo',
+                        'Nombre',
+                        'MovNumero',
+                    ],
                     'No hay registros de farmacia / bienes.'
                 );
 

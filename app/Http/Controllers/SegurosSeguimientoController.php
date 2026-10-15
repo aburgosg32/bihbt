@@ -10,85 +10,129 @@ class SegurosSeguimientoController extends Controller
     public function index(Request $request)
     {
         $dni = trim((string) $request->query('dni', ''));
+        $historia = trim((string) $request->query('historia', ''));
+
         $atenciones = collect();
         $buscado = false;
 
-        if ($request->has('dni')) {
-            // Normalizar el valor antes de validarlo.
-            $request->merge(['dni' => $dni]);
+        if ($request->has('dni') || $request->has('historia')) {
+            $request->merge([
+                'dni' => $dni,
+                'historia' => $historia,
+            ]);
 
             $request->validate(
                 [
-                    'dni' => ['required', 'regex:/^[0-9]{8}$/'],
+                    'dni' => [
+                        'nullable',
+                        'required_without:historia',
+                        'regex:/^[0-9]{8}$/',
+                    ],
+                    'historia' => [
+                        'nullable',
+                        'required_without:dni',
+                        'integer',
+                        'min:1',
+                        'max:2147483647',
+                    ],
                 ],
                 [
-                    'dni.required' => 'Ingrese el DNI del paciente.',
-                    'dni.regex' => 'El DNI debe tener exactamente 8 dígitos.',
+                    'dni.required_without' =>
+                    'Ingrese el DNI o la historia clínica del paciente.',
+                    'dni.regex' =>
+                    'El DNI debe tener exactamente 8 dígitos.',
+                    'historia.required_without' =>
+                    'Ingrese el DNI o la historia clínica del paciente.',
+                    'historia.integer' =>
+                    'La historia clínica debe ser un número entero.',
+                    'historia.min' =>
+                    'La historia clínica debe ser mayor que cero.',
+                    'historia.max' =>
+                    'La historia clínica está fuera del rango permitido.',
                 ]
             );
 
             $buscado = true;
 
-            $sql = <<<'SQL'
-                SELECT
-                    CONVERT(date, A.FechaIngreso) AS FechaIngreso,
-                    A.IdCuentaAtencion,
-                    P.NroHistoriaClinica,
+            $condiciones = ['A.IdEstadoAtencion <> 0'];
+            $parametros = [];
 
-                    LTRIM(RTRIM(
-                        COALESCE(P.ApellidoPaterno, '') + ' ' +
-                        COALESCE(P.ApellidoMaterno, '') + ' ' +
-                        COALESCE(P.PrimerNombre, '') + ' ' +
-                        COALESCE(P.SegundoNombre, '')
-                    )) AS Paciente,
+            if ($dni !== '') {
+                $condiciones[] = 'P.NroDocumento = ?';
+                $parametros[] = $dni;
+            }
 
-                    A.Edad,
-                    TS.Descripcion AS TipoServicio,
-                    S.Nombre AS Servicio,
+            if ($historia !== '') {
+                $condiciones[] = 'P.NroHistoriaClinica = ?';
+                $parametros[] = (int) $historia;
+            }
 
-                    COALESCE(
-                        NULLIF(
-                            LTRIM(RTRIM(
-                                COALESCE(E.ApellidoPaterno, '') + ' ' +
-                                COALESCE(E.ApellidoMaterno, '') + ' ' +
-                                COALESCE(E.Nombres, '')
-                            )),
-                            ''
-                        ),
-                        'SIN MÉDICO REGISTRADO'
-                    ) AS Medico
+            $where = implode(' AND ', $condiciones);
 
-                FROM Atenciones AS A
+            $sql = <<<SQL
+            SELECT
+                CONVERT(date, A.FechaIngreso) AS FechaIngreso,
+                A.IdCuentaAtencion,
+                P.NroHistoriaClinica,
 
-                INNER JOIN Pacientes AS P
-                    ON A.IdPaciente = P.IdPaciente
+                LTRIM(RTRIM(
+                    COALESCE(P.ApellidoPaterno, '') + ' ' +
+                    COALESCE(P.ApellidoMaterno, '') + ' ' +
+                    COALESCE(P.PrimerNombre, '') + ' ' +
+                    COALESCE(P.SegundoNombre, '')
+                )) AS Paciente,
 
-                LEFT JOIN TiposServicio AS TS
-                    ON A.IdTipoServicio = TS.IdTipoServicio
+                A.Edad,
+                TS.Descripcion AS TipoServicio,
+                S.Nombre AS Servicio,
 
-                LEFT JOIN Servicios AS S
-                    ON A.IdServicioIngreso = S.IdServicio
+                COALESCE(
+                    NULLIF(
+                        LTRIM(RTRIM(
+                            COALESCE(E.ApellidoPaterno, '') + ' ' +
+                            COALESCE(E.ApellidoMaterno, '') + ' ' +
+                            COALESCE(E.Nombres, '')
+                        )),
+                        ''
+                    ),
+                    'SIN MÉDICO REGISTRADO'
+                ) AS Medico
 
-                LEFT JOIN Medicos AS M
-                    ON A.IdMedicoIngreso = M.IdMedico
+            FROM Atenciones AS A
 
-                LEFT JOIN Empleados AS E
-                    ON M.IdEmpleado = E.IdEmpleado
+            INNER JOIN Pacientes AS P
+                ON A.IdPaciente = P.IdPaciente
 
-                WHERE P.NroDocumento = ?
+            LEFT JOIN TiposServicio AS TS
+                ON A.IdTipoServicio = TS.IdTipoServicio
 
-                ORDER BY
-                    A.FechaIngreso DESC,
-                    A.IdCuentaAtencion DESC
-                SQL;
+            LEFT JOIN Servicios AS S
+                ON A.IdServicioIngreso = S.IdServicio
+
+            LEFT JOIN Medicos AS M
+                ON A.IdMedicoIngreso = M.IdMedico
+
+            LEFT JOIN Empleados AS E
+                ON M.IdEmpleado = E.IdEmpleado
+
+            WHERE {$where}
+
+            ORDER BY
+                A.FechaIngreso DESC,
+                A.IdCuentaAtencion DESC
+            SQL;
 
             $atenciones = collect(
-                DB::connection('sigh_produccion')->select($sql, [$dni])
+                DB::connection('sigh_produccion')->select(
+                    $sql,
+                    $parametros
+                )
             );
         }
 
         return view('seguros.seguimiento', compact(
             'dni',
+            'historia',
             'atenciones',
             'buscado'
         ));
@@ -114,7 +158,7 @@ class SegurosSeguimientoController extends Controller
         FROM Atenciones AS A
         LEFT JOIN Pacientes AS P
             ON A.IdPaciente = P.IdPaciente
-        WHERE A.IdCuentaAtencion = ?
+        WHERE A.IdCuentaAtencion = ? AND A.IdEstadoAtencion <> 0
         ORDER BY A.FechaIngreso DESC, A.IdAtencion DESC
         SQL,
             [$cuenta]
@@ -143,36 +187,61 @@ class SegurosSeguimientoController extends Controller
         // un servicio puede haberse consumido más de una vez.
         $servicios = $db->select(
             <<<'SQL'
-        SELECT
-            FO.IdOrden,
-            FC.Codigo,
-            FC.Nombre AS Servicio
-        FROM FactOrdenServicio AS FO
-        INNER JOIN FacturacionServicioDespacho AS FS
-            ON FO.IdOrden = FS.idOrden
-        LEFT JOIN FactCatalogoServicios AS FC
-            ON FS.IdProducto = FC.IdProducto
-        WHERE FO.IdCuentaAtencion = ?
-        ORDER BY FO.IdOrden, FC.Codigo
-        SQL,
+    SELECT
+        FO.IdOrden,
+        CONVERT(varchar(10), FO.FechaDespacho, 103) + ' ' + CONVERT(varchar(8), FO.FechaDespacho, 108) AS FechaServicio,
+        FC.Codigo,
+        FC.Nombre AS Servicio
+    FROM FactOrdenServicio AS FO
+    INNER JOIN FacturacionServicioDespacho AS FS
+        ON FO.IdOrden = FS.idOrden
+    LEFT JOIN FactCatalogoServicios AS FC
+        ON FS.IdProducto = FC.IdProducto
+    WHERE FO.IdCuentaAtencion = ?
+    ORDER BY FO.FechaDespacho DESC, FO.IdOrden DESC, FC.Codigo
+    SQL,
             [$cuenta]
         );
 
         // Ejecutar el procedimiento existente, sin modificarlo.
-        $farmacia = collect(
-            $db->select(
-                'EXEC dbo.FarmaciaFinanciamientosPorNroCuenta @idCuentaAtencion = ?',
-                [$cuenta]
-            )
-        )->map(function ($fila) {
-            return [
-                'Codigo' => $fila->Codigo ?? '',
-                'Nombre' => $fila->Nombre ?? '',
-                'MovNumero' => $fila->MovNumero ?? '',
-                'MovTipo' => $fila->MovTipo ?? '',
-                'EstadoMovimiento' => $fila->idEstadoMovimiento ?? '',
-            ];
-        })->values();
+        $farmacia = $db->select(
+            <<<'SQL'
+    SELECT
+        CONVERT(varchar(10), FM.fechaCreacion, 103)
+            + ' ' +
+        CONVERT(varchar(8), FM.fechaCreacion, 108) AS FechaFarmacia,
+        FC.Codigo,
+        FC.Nombre,
+        FBF.MovNumero,
+        FBF.MovTipo,
+        FM.idEstadoMovimiento AS EstadoMovimiento
+
+    FROM farmMovimientoVentas AS FMV
+
+    INNER JOIN farmMovimiento AS FM
+        ON FMV.movNumero = FM.MovNumero
+        AND FMV.movTipo = FM.MovTipo
+
+    INNER JOIN Atenciones AS A
+        ON FMV.idCuentaAtencion = A.IdCuentaAtencion
+
+    LEFT JOIN FacturacionBienesFinanciamientos AS FBF
+        ON FBF.MovNumero = FMV.movNumero
+        AND FBF.MovTipo = FMV.movTipo
+
+    LEFT JOIN FactCatalogoBienesInsumos AS FC
+        ON FBF.IdProducto = FC.IdProducto
+
+    WHERE A.IdCuentaAtencion = ?
+      AND A.idEstadoAtencion <> 0
+
+    ORDER BY
+        FM.fechaCreacion DESC,
+        FBF.MovNumero DESC,
+        FC.Codigo
+    SQL,
+            [$cuenta]
+        );
 
         return response()->json([
             'atencion' => $atencion,
