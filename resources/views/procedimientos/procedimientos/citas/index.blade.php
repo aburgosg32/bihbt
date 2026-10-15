@@ -144,6 +144,11 @@
                     <span id="totalReservados">0</span>
                 </span>
 
+                <span class="badge badge-warning px-2 py-2 mr-1">
+                    En proceso:
+                    <span id="totalEnProceso">0</span>
+                </span>
+
                 <span class="badge badge-danger px-2 py-2">
                     Bloqueados:
                     <span id="totalBloqueados">0</span>
@@ -217,6 +222,11 @@
                     type="hidden"
                     name="procedimiento_cupo_id"
                     id="modalCupoId">
+
+                <input
+                    type="hidden"
+                    name="bloqueo_token"
+                    id="bloqueoToken">
 
                 <div class="modal-header bg-success">
                     <h5 class="modal-title">
@@ -591,6 +601,7 @@
         const cuerpoCupos = document.getElementById('cuerpoCupos');
         const formAgregarPaciente = document.getElementById('formAgregarPaciente');
         const modalCupoId = document.getElementById('modalCupoId');
+        const bloqueoToken = document.getElementById('bloqueoToken');
         const numeroCuenta = document.getElementById('numeroCuenta');
         const btnBuscarCuenta = document.getElementById('btnBuscarCuenta');
         const btnGuardarCita = document.getElementById('btnGuardarCita');
@@ -615,6 +626,20 @@
             route(
                 'procedimientos.citas.reprogramar',
                 ['cita' => 'CITA_REEMPLAZAR']
+            )
+        );
+
+        const rutaApartarCupo = @json(
+            route(
+                'procedimientos.citas.cupos.apartar',
+                ['cupo' => 'CUPO_REEMPLAZAR']
+            )
+        );
+
+        const rutaLiberarCupo = @json(
+            route(
+                'procedimientos.citas.cupos.liberar',
+                ['cupo' => 'CUPO_REEMPLAZAR']
             )
         );
 
@@ -658,42 +683,106 @@
         let fechasDisponibles = [];
         let fechasProgramadas = [];
 
-        cuerpoCupos.addEventListener('click', function(evento) {
+        let cupoTemporalId = null;
+        let citaConfirmada = false;
 
-            const boton = evento.target.closest(
-                '.btn-agregar-paciente'
-            );
+        cuerpoCupos.addEventListener(
+            'click',
+            async function(evento) {
+                const boton = evento.target.closest(
+                    '.btn-agregar-paciente'
+                );
 
-            if (!boton) {
-                return;
+                if (!boton) {
+                    return;
+                }
+
+                const cupoId = boton.dataset.cupoId;
+                const textoOriginal = boton.innerHTML;
+
+                boton.disabled = true;
+                boton.innerHTML = `
+                    <i class="fas fa-spinner fa-spin mr-1"></i>
+                    Apartando...
+                `;
+
+                try {
+                    const url = rutaApartarCupo.replace(
+                        'CUPO_REEMPLAZAR',
+                        cupoId
+                    );
+
+                    const datos = new FormData();
+                    datos.append('_token', @json(csrf_token()));
+
+                    const respuesta = await fetch(url, {
+                        method: 'POST',
+                        body: datos,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    const resultado = await respuesta.json();
+
+                    if (!respuesta.ok) {
+                        let mensaje = resultado.message ||
+                            'No se pudo apartar el cupo.';
+
+                        if (resultado.errors) {
+                            mensaje = Object.values(
+                                resultado.errors
+                            ).flat().join(' ');
+                        }
+
+                        throw new Error(mensaje);
+                    }
+
+                    formAgregarPaciente.reset();
+
+                    cupoTemporalId = cupoId;
+                    citaConfirmada = false;
+                    modalCupoId.value = cupoId;
+                    bloqueoToken.value = resultado.bloqueo_token;
+
+                    document.getElementById('modalHora')
+                        .textContent = boton.dataset.hora;
+
+                    document.getElementById('modalFecha')
+                        .textContent = formatearFecha(fecha.value);
+
+                    document.getElementById('modalProcedimiento')
+                        .textContent =
+                        procedimiento.options[
+                            procedimiento.selectedIndex
+                        ].text;
+
+                    mensajeBusqueda.innerHTML = '';
+                    datosPaciente.style.display = 'none';
+                    btnGuardarCita.disabled = true;
+
+                    $('#modalAgregarPaciente').modal('show');
+                    cargarCupos(true);
+
+                    setTimeout(function() {
+                        numeroCuenta.focus();
+                    }, 400);
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Cupo no disponible',
+                        text: error.message,
+                        confirmButtonText: 'Aceptar',
+                        confirmButtonColor: '#007bff'
+                    });
+
+                    cargarCupos(true);
+                } finally {
+                    boton.disabled = false;
+                    boton.innerHTML = textoOriginal;
+                }
             }
-
-            formAgregarPaciente.reset();
-
-            modalCupoId.value = boton.dataset.cupoId;
-
-            document.getElementById('modalHora')
-                .textContent = boton.dataset.hora;
-
-            document.getElementById('modalFecha')
-                .textContent = formatearFecha(fecha.value);
-
-            document.getElementById('modalProcedimiento')
-                .textContent =
-                procedimiento.options[
-                    procedimiento.selectedIndex
-                ].text;
-
-            mensajeBusqueda.innerHTML = '';
-            datosPaciente.style.display = 'none';
-            btnGuardarCita.disabled = true;
-
-            $('#modalAgregarPaciente').modal('show');
-
-            setTimeout(function() {
-                numeroCuenta.focus();
-            }, 400);
-        });
+        );
         cuerpoCupos.addEventListener('click', function(evento) {
             const boton = evento.target.closest(
                 '.btn-reprogramar'
@@ -1107,11 +1196,12 @@
             'submit',
             function(evento) {
                 evento.preventDefault();
-                const ventanaTicket = window.open('', '_blank');
 
                 if (btnGuardarCita.disabled) {
                     return;
                 }
+
+                const ventanaTicket = window.open('', '_blank');
 
                 btnGuardarCita.disabled = true;
 
@@ -1149,6 +1239,10 @@
                         return resultado;
                     })
                     .then(function(resultado) {
+                        citaConfirmada = true;
+                        cupoTemporalId = null;
+                        bloqueoToken.value = '';
+
                         $('#modalAgregarPaciente').modal('hide');
 
                         formAgregarPaciente.reset();
@@ -1303,13 +1397,15 @@
             cargarCupos();
         });
 
-        function cargarCupos() {
-            panelInicial.innerHTML = `
+        function cargarCupos(silencioso = false) {
+            if (!silencioso) {
+                panelInicial.innerHTML = `
             <div>
                 <i class="fas fa-spinner fa-spin fa-3x mb-3"></i>
                 <div>Consultando cupos...</div>
             </div>
         `;
+            }
 
             const url = new URL(
                 @json(route(
@@ -1416,6 +1512,15 @@
             `;
             }
 
+            if (estado === 'EN_PROCESO') {
+                return `
+                <span class="badge badge-warning estado-cupo">
+                    <i class="fas fa-user-clock mr-1"></i>
+                    EN PROCESO
+                </span>
+            `;
+            }
+
             return `
             <span class="badge badge-danger estado-cupo">
                 BLOQUEADO
@@ -1425,6 +1530,14 @@
 
         function crearPaciente(cupo) {
             if (!cupo.cita) {
+                if (cupo.estado === 'EN_PROCESO') {
+                    return `
+                    <small class="text-warning font-weight-bold">
+                        Otro usuario está registrando un paciente
+                    </small>
+                `;
+                }
+
                 if (
                     cupo.estado === 'BLOQUEADO' &&
                     cupo.motivo_bloqueo
@@ -1473,6 +1586,19 @@
                 Agregar paciente
             </button>
         `;
+            }
+
+            if (cupo.estado === 'EN_PROCESO') {
+                return `
+                <button
+                    type="button"
+                    class="btn btn-warning btn-sm"
+                    disabled
+                >
+                    <i class="fas fa-user-clock mr-1"></i>
+                    En proceso
+                </button>
+            `;
             }
 
             /*
@@ -1563,6 +1689,11 @@
                     return cupo.estado === 'RESERVADO';
                 }).length;
 
+            document.getElementById('totalEnProceso')
+                .textContent = cupos.filter(function(cupo) {
+                    return cupo.estado === 'EN_PROCESO';
+                }).length;
+
             document.getElementById('totalBloqueados')
                 .textContent = cupos.filter(function(cupo) {
                     return cupo.estado === 'BLOQUEADO';
@@ -1604,6 +1735,51 @@
         `;
         }
 
+        async function liberarCupoTemporal() {
+            if (
+                !cupoTemporalId ||
+                !bloqueoToken.value ||
+                citaConfirmada
+            ) {
+                return;
+            }
+
+            const cupoId = cupoTemporalId;
+            const token = bloqueoToken.value;
+
+            cupoTemporalId = null;
+            bloqueoToken.value = '';
+            modalCupoId.value = '';
+
+            const url = rutaLiberarCupo.replace(
+                'CUPO_REEMPLAZAR',
+                cupoId
+            );
+
+            const datos = new FormData();
+            datos.append('_token', @json(csrf_token()));
+            datos.append('bloqueo_token', token);
+
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    body: datos,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+            } catch (error) {
+                console.error(
+                    'No se pudo liberar el cupo:',
+                    error
+                );
+            }
+
+            if (procedimiento.value && fecha.value) {
+                cargarCupos(true);
+            }
+        }
+
         function formatearFecha(valor) {
             const partes = valor.split('-');
 
@@ -1626,13 +1802,29 @@
         $('#modalAgregarPaciente').on(
             'hidden.bs.modal',
             function() {
+                if (!citaConfirmada) {
+                    liberarCupoTemporal();
+                }
+
+                citaConfirmada = false;
                 formAgregarPaciente.reset();
                 modalCupoId.value = '';
+                bloqueoToken.value = '';
                 mensajeBusqueda.innerHTML = '';
                 datosPaciente.style.display = 'none';
                 btnGuardarCita.disabled = true;
             }
         );
+
+        setInterval(function() {
+            if (
+                procedimiento.value &&
+                fecha.value &&
+                !document.hidden
+            ) {
+                cargarCupos(true);
+            }
+        }, 7000);
 
     });
 </script>

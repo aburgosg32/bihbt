@@ -22,10 +22,13 @@ class ProcedimientoCupo extends Model
         'hora',
         'estado',
         'motivo_bloqueo',
+        'bloqueo_token',
+        'bloqueado_hasta',
     ];
 
     protected $casts = [
         'procedimiento_programacion_id' => 'integer',
+        'bloqueado_hasta' => 'datetime',
     ];
 
     public function programacion(): BelongsTo

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class ProcedimientoCitaController extends Controller
 {
@@ -78,10 +79,20 @@ class ProcedimientoCitaController extends Controller
                 now()->toDateString()
             )
             ->whereHas('cupos', function ($query) {
-                $query->where(
-                    'estado',
-                    ProcedimientoCupo::ESTADO_DISPONIBLE
-                );
+                $query
+                    ->where(
+                        'estado',
+                        ProcedimientoCupo::ESTADO_DISPONIBLE
+                    )
+                    ->where(function ($bloqueo) {
+                        $bloqueo
+                            ->whereNull('bloqueado_hasta')
+                            ->orWhere(
+                                'bloqueado_hasta',
+                                '<=',
+                                now()
+                            );
+                    });
             })
             ->orderBy('fecha_programacion')
             ->pluck('fecha_programacion')
@@ -143,6 +154,17 @@ class ProcedimientoCitaController extends Controller
             ->flatMap(function ($programacion) {
                 return $programacion->cupos->map(
                     function ($cupo) use ($programacion) {
+                        $bloqueoTemporalActivo =
+                            $cupo->estado ===
+                            ProcedimientoCupo::ESTADO_DISPONIBLE &&
+                            !empty($cupo->bloqueo_token) &&
+                            !empty($cupo->bloqueado_hasta) &&
+                            $cupo->bloqueado_hasta->isFuture();
+
+                        $estadoVisible = $bloqueoTemporalActivo
+                            ? 'EN_PROCESO'
+                            : $cupo->estado;
+
                         return [
                             'id' => $cupo->id,
 
@@ -152,7 +174,13 @@ class ProcedimientoCitaController extends Controller
                                 5
                             ),
 
-                            'estado' => $cupo->estado,
+                            'estado' => $estadoVisible,
+
+                            'bloqueado_hasta' =>
+                            $bloqueoTemporalActivo
+                                ? $cupo->bloqueado_hasta
+                                ->toIso8601String()
+                                : null,
 
                             'motivo_bloqueo' =>
                             $cupo->motivo_bloqueo,
@@ -314,6 +342,12 @@ class ProcedimientoCitaController extends Controller
                     'exists:procedimiento_cupos,id',
                 ],
 
+                'bloqueo_token' => [
+                    'required',
+                    'string',
+                    'max:64',
+                ],
+
                 'numero_cuenta' => [
                     'required',
                     'string',
@@ -337,6 +371,9 @@ class ProcedimientoCitaController extends Controller
 
                 'procedimiento_cupo_id.exists' =>
                 'El cupo seleccionado no existe.',
+
+                'bloqueo_token.required' =>
+                'La reserva temporal del cupo no existe o venció.',
 
                 'numero_cuenta.required' =>
                 'Ingrese el número de cuenta.',
@@ -419,6 +456,25 @@ class ProcedimientoCitaController extends Controller
                         ]);
                     }
 
+                    $tokenCorrecto =
+                        !empty($cupo->bloqueo_token) &&
+                        hash_equals(
+                            (string) $cupo->bloqueo_token,
+                            (string) $datos['bloqueo_token']
+                        );
+
+                    $bloqueoVigente =
+                        !empty($cupo->bloqueado_hasta) &&
+                        $cupo->bloqueado_hasta->isFuture();
+
+                    if (!$tokenCorrecto || !$bloqueoVigente) {
+                        throw ValidationException::withMessages([
+                            'procedimiento_cupo_id' =>
+                            'La reserva temporal del cupo venció. ' .
+                                'Seleccione nuevamente el horario.',
+                        ]);
+                    }
+
                     if ($cupo->cita()->exists()) {
                         throw ValidationException::withMessages([
                             'procedimiento_cupo_id' =>
@@ -475,6 +531,8 @@ class ProcedimientoCitaController extends Controller
                         ProcedimientoCupo::ESTADO_RESERVADO,
 
                         'motivo_bloqueo' => null,
+                        'bloqueo_token' => null,
+                        'bloqueado_hasta' => null,
                     ]);
 
                     return $cita;
@@ -611,6 +669,19 @@ class ProcedimientoCitaController extends Controller
                 ]);
             }
 
+            $nuevoCupoEnProceso =
+                !empty($nuevoCupo->bloqueo_token) &&
+                !empty($nuevoCupo->bloqueado_hasta) &&
+                $nuevoCupo->bloqueado_hasta->isFuture();
+
+            if ($nuevoCupoEnProceso) {
+                throw ValidationException::withMessages([
+                    'nuevo_cupo_id' =>
+                    'Otro usuario está registrando un paciente ' .
+                        'en el nuevo cupo seleccionado.',
+                ]);
+            }
+
             if ($nuevoCupo->cita()->exists()) {
                 throw ValidationException::withMessages([
                     'nuevo_cupo_id' =>
@@ -635,6 +706,8 @@ class ProcedimientoCitaController extends Controller
                 ProcedimientoCupo::ESTADO_RESERVADO,
 
                 'motivo_bloqueo' => null,
+                'bloqueo_token' => null,
+                'bloqueado_hasta' => null,
             ]);
 
             /*
@@ -645,6 +718,8 @@ class ProcedimientoCitaController extends Controller
                 ProcedimientoCupo::ESTADO_DISPONIBLE,
 
                 'motivo_bloqueo' => null,
+                'bloqueo_token' => null,
+                'bloqueado_hasta' => null,
             ]);
         });
 
@@ -720,5 +795,106 @@ class ProcedimientoCitaController extends Controller
             ->where('A.IdCuentaAtencion', trim($cuenta))
             ->orderByDesc('A.FechaIngreso')
             ->first();
+    }
+
+    public function apartarCupo(
+        ProcedimientoCupo $cupo
+    ): JsonResponse {
+        $resultado = DB::transaction(
+            function () use ($cupo) {
+                $cupoBloqueado = ProcedimientoCupo::query()
+                    ->lockForUpdate()
+                    ->findOrFail($cupo->id);
+
+                if (
+                    $cupoBloqueado->estado !==
+                    ProcedimientoCupo::ESTADO_DISPONIBLE
+                ) {
+                    throw ValidationException::withMessages([
+                        'cupo' =>
+                        'El cupo ya no está disponible.',
+                    ]);
+                }
+
+                if ($cupoBloqueado->cita()->exists()) {
+                    throw ValidationException::withMessages([
+                        'cupo' =>
+                        'Este cupo ya tiene una cita registrada.',
+                    ]);
+                }
+
+                $bloqueoVigente =
+                    !empty($cupoBloqueado->bloqueo_token) &&
+                    !empty($cupoBloqueado->bloqueado_hasta) &&
+                    $cupoBloqueado->bloqueado_hasta->isFuture();
+
+                if ($bloqueoVigente) {
+                    throw ValidationException::withMessages([
+                        'cupo' =>
+                        'Otro usuario está registrando un paciente en este cupo.',
+                    ]);
+                }
+
+                $token = (string) Str::uuid();
+                $bloqueadoHasta = now()->addMinutes(5);
+
+                $cupoBloqueado->update([
+                    'bloqueo_token' => $token,
+                    'bloqueado_hasta' => $bloqueadoHasta,
+                ]);
+
+                return [
+                    'token' => $token,
+                    'bloqueado_hasta' =>
+                    $bloqueadoHasta->toIso8601String(),
+                ];
+            }
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' =>
+            'El cupo fue apartado temporalmente.',
+            'bloqueo_token' => $resultado['token'],
+            'bloqueado_hasta' =>
+            $resultado['bloqueado_hasta'],
+        ]);
+    }
+    public function liberarCupo(
+        Request $request,
+        ProcedimientoCupo $cupo
+    ): JsonResponse {
+        $datos = $request->validate([
+            'bloqueo_token' => [
+                'required',
+                'string',
+                'max:64',
+            ],
+        ]);
+
+        DB::transaction(
+            function () use ($cupo, $datos) {
+                $cupoBloqueado = ProcedimientoCupo::query()
+                    ->lockForUpdate()
+                    ->findOrFail($cupo->id);
+
+                if (
+                    hash_equals(
+                        (string) $cupoBloqueado->bloqueo_token,
+                        (string) $datos['bloqueo_token']
+                    )
+                ) {
+                    $cupoBloqueado->update([
+                        'bloqueo_token' => null,
+                        'bloqueado_hasta' => null,
+                    ]);
+                }
+            }
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'El cupo fue liberado.',
+        ]);
     }
 }

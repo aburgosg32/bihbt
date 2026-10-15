@@ -378,6 +378,15 @@ Route::prefix('procedimientos')
             '/reportes/pdf',
             [ProcedimientoReporteController::class, 'pdf']
         )->name('reportes.pdf');
+        Route::post(
+            '/citas/cupos/{cupo}/apartar',
+            [ProcedimientoCitaController::class, 'apartarCupo']
+        )->name('citas.cupos.apartar');
+
+        Route::post(
+            '/citas/cupos/{cupo}/liberar',
+            [ProcedimientoCitaController::class, 'liberarCupo']
+        )->name('citas.cupos.liberar');
     });
 
 /*
